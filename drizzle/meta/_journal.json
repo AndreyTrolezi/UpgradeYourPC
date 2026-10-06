@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1789064625715,
+      "tag": "0000_freezing_energizer",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1789389467864,
+      "tag": "0001_premium_shotgun",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1789579680630,
+      "tag": "0002_living_phantom_reporter",
+      "breakpoints": true
+    }
+  ]
+}
