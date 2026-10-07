@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Upgrade PC — Conheça suas peças. Planeje seu próximo passo.",
+  title: "UpgradeYourPC — Conheça suas peças. Planeje seu próximo passo.",
   description: "Explore peças AMD e Intel, compare especificações e cuide da sua configuração no Meu PC, com diagnóstico, simulações e histórico pessoal.",
   icons: {
     icon: "/favicon.svg",
