@@ -88,7 +88,7 @@ function buildText(build: BuildConfig, parts: Part[]) {
     if (source) lines.push(`${p.name}: ${money(partPrice(build, p))} — ${source.method === "mean" ? "média" : "mediana"} de ${source.sampleSize} lojas em ${new Date(source.checkedAt).toLocaleDateString("pt-BR")}, sem frete e cupons.`);
   }
   if (build.notes) lines.push(`Observações: ${build.notes}`);
-  lines.push("", "Montado no Upgrade Lab");
+  lines.push("", "Montado no UpgradeYourPC");
   return lines.join("\n");
 }
 
@@ -259,7 +259,7 @@ export function LabApp({ user, initialView = "my-pc", initialSimulation, initial
     catalog: { title: "Catálogo técnico", subtitle: "Consulte peças, construção, especificações e cadastre modelos próprios." },
     prices: { title: "Central de preços", subtitle: "Organize ofertas pelo custo real e pela procedência — não apenas pelo menor número." },
     glossary: { title: "Glossário na prática", subtitle: "Entenda o termo, o que ele significa no uso real e o que influencia." },
-    extensions: { title: "Extensões do Upgrade Lab", subtitle: "Recursos independentes, permissões claras e uma futura comunidade de plug-ins." },
+    extensions: { title: "Extensões do UpgradeYourPC", subtitle: "Recursos independentes, permissões claras e uma futura comunidade de plug-ins." },
   };
 
   function openExport(target: "current" | "draft") { setExportTarget(target); setExportOpen(true); }
@@ -272,7 +272,7 @@ export function LabApp({ user, initialView = "my-pc", initialSimulation, initial
             <div className="flex h-11 items-center gap-3 overflow-hidden rounded-xl border border-cyan-300/15 bg-white/[0.035] px-2.5">
               <div className="grid size-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-cyan-300 to-violet-400 font-black text-slate-950 shadow-[0_0_24px_rgba(103,232,249,.25)]">UP</div>
               <div className="min-w-0 group-data-[collapsible=icon]:hidden">
-                <div className="truncate text-sm font-black tracking-[.14em]">UPGRADE PC</div>
+                <div className="truncate text-sm font-black tracking-[.14em]">UPGRADEYOURPC</div>
                 <div className="text-[11px] text-slate-500">universal · AMD + Intel</div>
               </div>
             </div>
@@ -619,7 +619,7 @@ function ExportDialog({ open, onOpenChange, build, parts }: { open: boolean; onO
     { icon: Copy, label: "Copiar", note: "Texto pronto para colar", action: async () => { await navigator.clipboard.writeText(text); toast.success("Configuração copiada."); } },
     { icon: MessageCircle, label: "WhatsApp", note: "Abre o compartilhamento com o texto", action: () => window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer") },
   ];
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="border-white/10 bg-[#0c1320] text-slate-100 sm:max-w-2xl"><DialogHeader><DialogTitle className="text-2xl font-black">Exportar configuração</DialogTitle><DialogDescription className="text-slate-500">{build.name} · {money(totalPrice(build, parts))}</DialogDescription></DialogHeader><div className="grid gap-3 sm:grid-cols-2">{actions.map(({ icon: Icon, label, note, action }) => <button key={label} onClick={action} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.025] p-4 text-left transition hover:border-cyan-300/20 hover:bg-cyan-300/5"><div className="grid size-10 place-items-center rounded-xl bg-white/5 text-cyan-300"><Icon className="size-5" /></div><div><div className="font-bold">{label}</div><div className="mt-0.5 text-xs text-slate-600">{note}</div></div></button>)}</div><div className="print-sheet"><h1>{build.name}</h1><p>Gerado no Upgrade Lab</p>{(Object.keys(categoryMeta) as PartCategory[]).map((category) => { const selected = getBuildParts(build, category, parts); return selected.length ? <div key={category}><b>{categoryMeta[category].label}</b><span>{selected.map((item) => item.name).join(" + ")}</span></div> : null; })}<hr /><strong>Total conhecido: {money(totalPrice(build, parts))}</strong><p>Valores de referência, sem frete e cupons. Peças sem preço não entram no total.</p>{getBuildParts(build, undefined, parts).filter(p => build.priceSources?.[p.id]).map(p => <p key={p.id}>{p.name}: {money(partPrice(build, p))} · {build.priceSources![p.id].method === "mean" ? "média" : "mediana"} de {build.priceSources![p.id].sampleSize} lojas em {new Date(build.priceSources![p.id].checkedAt).toLocaleDateString("pt-BR")}</p>)}{build.notes && <p>{build.notes}</p>}</div></DialogContent></Dialog>;
+  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="border-white/10 bg-[#0c1320] text-slate-100 sm:max-w-2xl"><DialogHeader><DialogTitle className="text-2xl font-black">Exportar configuração</DialogTitle><DialogDescription className="text-slate-500">{build.name} · {money(totalPrice(build, parts))}</DialogDescription></DialogHeader><div className="grid gap-3 sm:grid-cols-2">{actions.map(({ icon: Icon, label, note, action }) => <button key={label} onClick={action} className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.025] p-4 text-left transition hover:border-cyan-300/20 hover:bg-cyan-300/5"><div className="grid size-10 place-items-center rounded-xl bg-white/5 text-cyan-300"><Icon className="size-5" /></div><div><div className="font-bold">{label}</div><div className="mt-0.5 text-xs text-slate-600">{note}</div></div></button>)}</div><div className="print-sheet"><h1>{build.name}</h1><p>Gerado no UpgradeYourPC</p>{(Object.keys(categoryMeta) as PartCategory[]).map((category) => { const selected = getBuildParts(build, category, parts); return selected.length ? <div key={category}><b>{categoryMeta[category].label}</b><span>{selected.map((item) => item.name).join(" + ")}</span></div> : null; })}<hr /><strong>Total conhecido: {money(totalPrice(build, parts))}</strong><p>Valores de referência, sem frete e cupons. Peças sem preço não entram no total.</p>{getBuildParts(build, undefined, parts).filter(p => build.priceSources?.[p.id]).map(p => <p key={p.id}>{p.name}: {money(partPrice(build, p))} · {build.priceSources![p.id].method === "mean" ? "média" : "mediana"} de {build.priceSources![p.id].sampleSize} lojas em {new Date(build.priceSources![p.id].checkedAt).toLocaleDateString("pt-BR")}</p>)}{build.notes && <p>{build.notes}</p>}</div></DialogContent></Dialog>;
 }
 
 function ExtensionDialog({ open, onOpenChange, source, onSource, onInstall }: { open: boolean; onOpenChange: (open: boolean) => void; source: string; onSource: (value: string) => void; onInstall: () => void }) {
