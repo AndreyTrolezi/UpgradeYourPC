@@ -1,4 +1,4 @@
-# Upgrade PC
+# UpgradeYourPC
 
 Plataforma pública para cadastrar o PC atual, montar configurações AMD ou Intel, comparar componentes, validar compatibilidade e traduzir especificações técnicas para impacto prático.
 
@@ -12,7 +12,7 @@ Site: https://upgrade-lab.trolezikjkk.chatgpt.site
 - Exportação para CSV/Excel, texto, JSON, impressão/PDF e WhatsApp.
 - Central de ofertas com SerpApi, média/mediana da amostra, lojas permitidas e filtros de procedência.
 - Página da peça com fontes, imagens oficiais quando verificadas, alternativas, compatibilidade e hierarquia técnica.
-- UpgradePC Detector para Windows com revisão dos dados antes da importação.
+- UpgradeYourPC Detector para Windows com revisão dos dados antes da importação.
 - Extensões externas limitadas a manifestos declarativos; código remoto permanece bloqueado nesta fase.
 
 ## Licença
