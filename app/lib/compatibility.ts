@@ -71,8 +71,12 @@ export function analyzeBuild(build: BuildConfig, availableParts: Part[] = catalo
   }
 
   if (cpu && board) {
-    const compatible = stringSpec(cpu, "socket") === stringSpec(board, "socket");
-    checks.push({
+    const cpuSocket = stringSpec(cpu, "socket");
+    const boardSocket = stringSpec(board, "socket");
+    const compatible = cpuSocket === boardSocket;
+    if (!cpuSocket || !boardSocket) {
+      checks.push({ id: "socket", severity: "info", title: "Socket não informado", detail: "Confira os sockets oficiais do processador e da placa-mãe antes de comprar." });
+    } else checks.push({
       id: "socket", severity: compatible ? "ok" : "error", term: "socket",
       title: compatible ? `Socket ${stringSpec(cpu, "socket")} compatível` : "Processador e placa-mãe incompatíveis",
       detail: compatible
@@ -82,8 +86,12 @@ export function analyzeBuild(build: BuildConfig, availableParts: Part[] = catalo
   }
 
   if (board && memory) {
-    const compatible = stringSpec(board, "memoryType") === stringSpec(memory, "memoryType");
-    checks.push({
+    const boardMemory = stringSpec(board, "memoryType");
+    const ramMemory = stringSpec(memory, "memoryType");
+    const compatible = boardMemory === ramMemory;
+    if (!boardMemory || !ramMemory) {
+      checks.push({ id: "memory-type", severity: "info", title: "Geração de memória não informada", detail: "Confira se placa-mãe e memória usam a mesma geração DDR." });
+    } else checks.push({
       id: "memory-type", severity: compatible ? "ok" : "error", term: "ddr",
       title: compatible ? `${stringSpec(memory, "memoryType")} compatível` : "Geração de memória incompatível",
       detail: compatible
@@ -96,7 +104,9 @@ export function analyzeBuild(build: BuildConfig, availableParts: Part[] = catalo
     const formats = listSpec(chassis, "formFactors");
     const boardFormat = stringSpec(board, "formFactor");
     const compatible = formats.includes(boardFormat);
-    checks.push({
+    if (!formats.length || !boardFormat) {
+      checks.push({ id: "form-factor", severity: "info", title: "Formato da placa-mãe ou gabinete não informado", detail: "Não é possível confirmar o encaixe sem os formatos suportados pelo gabinete." });
+    } else checks.push({
       id: "form-factor", severity: compatible ? "ok" : "error", term: "form-factor",
       title: compatible ? "Placa-mãe cabe no gabinete" : "Formato da placa-mãe não cabe",
       detail: compatible ? `${chassis.name} aceita ${boardFormat}.` : `${chassis.name} aceita ${formats.join(", ") || "formatos não informados"}, não ${boardFormat}.`,
@@ -107,7 +117,9 @@ export function analyzeBuild(build: BuildConfig, availableParts: Part[] = catalo
     const gpuLength = numberSpec(gpu, "length");
     const limit = numberSpec(chassis, "gpuLength");
     const clearance = limit - gpuLength;
-    checks.push({
+    if (!gpuLength || !limit) {
+      checks.push({ id: "gpu-length", severity: "info", title: "Medidas da GPU ou gabinete não informadas", detail: "Não é possível confirmar o encaixe físico sem o comprimento exato da placa e o espaço útil do gabinete." });
+    } else checks.push({
       id: "gpu-length", severity: clearance >= 20 ? "ok" : clearance >= 0 ? "warning" : "error",
       title: clearance >= 20 ? "Espaço adequado para a GPU" : clearance >= 0 ? "GPU cabe com pouca folga" : "GPU longa demais para o gabinete",
       detail: `${gpuLength} mm de placa para ${limit} mm informados no gabinete${clearance >= 0 ? ` — folga de ${clearance} mm.` : "."}`,
@@ -118,7 +130,9 @@ export function analyzeBuild(build: BuildConfig, availableParts: Part[] = catalo
     const height = numberSpec(cooler, "height");
     const limit = numberSpec(chassis, "coolerHeight");
     const compatible = height <= limit;
-    checks.push({
+    if (!height || !limit) {
+      checks.push({ id: "cooler-height", severity: "info", title: "Altura do cooler ou limite do gabinete desconhecido", detail: "Confira as medidas oficiais antes de confirmar a compatibilidade física." });
+    } else checks.push({
       id: "cooler-height", severity: compatible ? (limit - height < 4 ? "warning" : "ok") : "error",
       title: compatible ? "Altura do cooler compatível" : "Cooler alto demais para o gabinete",
       detail: `${height} mm de cooler para ${limit} mm de limite informado.`,
