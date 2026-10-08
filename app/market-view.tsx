@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Search, ExternalLink, LoaderCircle, TicketPercent, Copy, Info } from "lucide-react";
 import { toast } from "sonner";
 import { catalog, categoryMeta } from "./data/catalog";
+import { partCategories, type PartCategory } from "./lib/types";
 import { marketStores } from "./lib/market";
 import type { CouponSnapshot, MarketSnapshot } from "./lib/types";
 import { Button } from "@/components/ui/button";
@@ -16,13 +17,17 @@ const date = (s: string) => new Date(s).toLocaleString("pt-BR");
 export function MarketView({ onUse }: { onUse: (snapshot: MarketSnapshot, method: "mean" | "median") => void }) {
   const [id, setId] = useState("r7-5700x");
   const [query, setQuery] = useState("");
+  const [category, setCategory] = useState<PartCategory | "all">("all");
+  const [brand, setBrand] = useState("all");
   const [configured, setConfigured] = useState<boolean | null>(null);
   const [snapshot, setSnapshot] = useState<MarketSnapshot | null>(null);
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
   const part = catalog.find(p => p.id === id)!;
-  const filtered = catalog.filter(p => !p.tags.includes("atual") && `${p.brand} ${p.name} ${categoryMeta[p.category].label}`.toLowerCase().includes(query.toLowerCase()));
+  const eligible = catalog.filter(p => !p.tags.includes("atual"));
+  const brands = [...new Set(eligible.filter(p => category === "all" || p.category === category).map(p => p.brand))].sort();
+  const filtered = eligible.filter(p => (category === "all" || p.category === category) && (brand === "all" || p.brand === brand) && `${p.brand} ${p.name} ${categoryMeta[p.category].label}`.toLocaleLowerCase("pt-BR").includes(query.toLocaleLowerCase("pt-BR")));
   const options = filtered.some(p => p.id === id) ? filtered : [part, ...filtered];
 
   useEffect(() => {
@@ -54,7 +59,7 @@ export function MarketView({ onUse }: { onUse: (snapshot: MarketSnapshot, method
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="text-2xl font-bold">Preços e cupons na internet</h2><span className="rounded-full border border-cyan-300/20 px-3 py-1 text-sm text-cyan-200">SerpApi · Brasil</span></div>
       <p className="mt-2 text-base text-slate-400">Escolha o modelo para encontrar links de lojas e comparar a amostra de preços.</p>
       <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]">
-        <div className="space-y-2"><Input aria-label="Filtrar modelos para pesquisa online" className="lab-input" placeholder="Filtrar por modelo, marca ou categoria" value={query} disabled={loading} onChange={e => setQuery(e.target.value)} />
+        <div className="space-y-2"><div className="grid gap-2 sm:grid-cols-2"><Select value={category} onValueChange={v => { setCategory(v as PartCategory | "all"); setBrand("all"); }} disabled={loading}><SelectTrigger aria-label="Filtrar categoria" className="w-full border-white/10 bg-black/20"><SelectValue placeholder="Categoria" /></SelectTrigger><SelectContent><SelectItem value="all">Todas as categorias</SelectItem>{partCategories.map(c => <SelectItem key={c} value={c}>{categoryMeta[c].label}</SelectItem>)}</SelectContent></Select><Select value={brand} onValueChange={setBrand} disabled={loading}><SelectTrigger aria-label="Filtrar fabricante" className="w-full border-white/10 bg-black/20"><SelectValue placeholder="Fabricante" /></SelectTrigger><SelectContent><SelectItem value="all">Todos os fabricantes</SelectItem>{brands.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent></Select></div><Input aria-label="Filtrar modelos para pesquisa online" className="lab-input" placeholder="Filtrar por modelo, marca ou categoria" value={query} disabled={loading} onChange={e => setQuery(e.target.value)} />
           <Select value={id} onValueChange={setId} disabled={loading}><SelectTrigger aria-label="Modelo exato para consultar" className="w-full border-white/10 bg-black/20"><SelectValue /></SelectTrigger><SelectContent className="border-white/10 bg-[#101725] text-slate-100">{options.map(p => <SelectItem key={p.id} value={p.id}>{p.brand} {p.name}</SelectItem>)}</SelectContent></Select>
           {!filtered.length && <p className="text-sm text-slate-400">Nenhum modelo corresponde ao filtro.</p>}
         </div>
