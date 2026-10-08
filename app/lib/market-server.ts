@@ -30,8 +30,17 @@ async function searchSerp(params: Record<string, string>) {
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   url.searchParams.set("api_key", (env as Cloudflare.Env).SERPAPI_API_KEY!.trim());
   let response: Response;
+  const startedAt = Date.now();
   try { response = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: "error", headers: { Accept: "application/json" } }); }
-  catch { throw new MarketError(502, "provider", "O provedor demorou a responder. Tente novamente mais tarde."); }
+  catch (error) {
+    // Never log the request URL: it contains the SerpApi credential.
+    const elapsedMs = Date.now() - startedAt;
+    const kind = error instanceof Error ? error.name : typeof error;
+    const cause = error instanceof Error && "cause" in error ? (error as Error & { cause?: unknown }).cause : undefined;
+    const causeCode = cause && typeof cause === "object" && "code" in cause && typeof cause.code === "string" ? cause.code : "unknown";
+    console.error("market.serpapi.fetch_failed", { engine: params.engine ?? "unknown", elapsedMs, kind, causeCode });
+    throw new MarketError(502, "provider", "Falha na conexão com o provedor de preços. Confira o diagnóstico no terminal do servidor.");
+  }
   if (!response.ok) throw new MarketError(502, "provider", "O provedor não autorizou ou não concluiu a consulta. O administrador pode conferir a chave e o saldo da API.");
   let data: Record<string, unknown>;
   try { data = record(await response.json()); }
