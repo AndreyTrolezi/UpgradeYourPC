@@ -146,12 +146,14 @@ export function analyzeBuild(build: BuildConfig, availableParts: Part[] = catalo
     const capacity = numberSpec(cooler, "tdpCapacity");
     const peak = numberSpec(cpu, "maxPower") || numberSpec(cpu, "tdp");
     const thermalRatio = capacity / Math.max(1, peak);
-    checks.push({
+    if (!sockets.length || !socket) checks.push({ id: "cooler-socket", severity: "info", title: "Suporte de montagem não confirmado", detail: "Confira o kit de montagem e o socket informado pelo fabricante." });
+    else checks.push({
       id: "cooler-socket", severity: mounting ? "ok" : "error", term: "socket",
       title: mounting ? "Kit de montagem compatível" : "Cooler sem suporte ao socket",
       detail: mounting ? `${cooler.name} declara suporte a ${socket}.` : `${cooler.name} não lista ${socket} entre os encaixes.`,
     });
-    checks.push({
+    if (!capacity || !peak) checks.push({ id: "cooling", severity: "info", title: "Capacidade térmica não confirmada", detail: "Faltam dados para estimar a margem térmica. Consulte testes do cooler e processador." });
+    else checks.push({
       id: "cooling", severity: thermalRatio >= 1.25 ? "ok" : thermalRatio >= 1 ? "warning" : "error", term: "tdp",
       title: thermalRatio >= 1.25 ? "Refrigeração com boa margem" : thermalRatio >= 1 ? "Refrigeração no limite estimado" : "Refrigeração insuficiente",
       detail: `Capacidade estimada de ${capacity} W frente a até ~${peak} W do processador. TDP não substitui testes térmicos.`,
@@ -164,7 +166,8 @@ export function analyzeBuild(build: BuildConfig, availableParts: Part[] = catalo
     const gpuRecommendation = numberSpec(gpu, "psuRecommended");
     const headroom = wattage - estimated;
     const enough = wattage >= Math.max(estimated * 1.18, gpuRecommendation);
-    checks.push({
+    if (!wattage) checks.push({ id: "psu-power", severity: "info", title: "Potência da fonte não informada", detail: "Confira a potência nominal e as especificações elétricas da fonte antes de avaliar a margem." });
+    else checks.push({
       id: "psu-power", severity: enough ? (headroom > wattage * 0.5 ? "info" : "ok") : "error", term: "headroom",
       title: enough ? (headroom > wattage * 0.5 ? "Fonte com bastante folga" : "Potência da fonte adequada") : "Potência da fonte insuficiente",
       detail: `Consumo estimado de ~${estimated} W, fonte de ${wattage} W e recomendação da GPU de ${gpuRecommendation || "—"} W.`,
