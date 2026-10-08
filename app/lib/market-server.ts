@@ -31,7 +31,7 @@ async function searchSerp(params: Record<string, string>) {
   url.searchParams.set("api_key", (env as Cloudflare.Env).SERPAPI_API_KEY!.trim());
   let response: Response;
   const startedAt = Date.now();
-  try { response = await fetch(url, { signal: AbortSignal.timeout(20000), redirect: "error", headers: { Accept: "application/json" } }); }
+  try { response = await fetch(url.toString(), { signal: AbortSignal.timeout(20000), redirect: "manual", headers: { Accept: "application/json" } }); }
   catch (error) {
     // Never log the request URL: it contains the SerpApi credential.
     const elapsedMs = Date.now() - startedAt;
@@ -41,6 +41,8 @@ async function searchSerp(params: Record<string, string>) {
     console.error("market.serpapi.fetch_failed", { engine: params.engine ?? "unknown", elapsedMs, kind, causeCode });
     throw new MarketError(502, "provider", "Falha na conexão com o provedor de preços. Confira o diagnóstico no terminal do servidor.");
   }
+  // Never follow redirects to another host with the API key in the URL.
+  if (response.status >= 300 && response.status < 400) throw new MarketError(502, "provider", "O provedor redirecionou a consulta inesperadamente.");
   if (!response.ok) throw new MarketError(502, "provider", "O provedor não autorizou ou não concluiu a consulta. O administrador pode conferir a chave e o saldo da API.");
   let data: Record<string, unknown>;
   try { data = record(await response.json()); }
