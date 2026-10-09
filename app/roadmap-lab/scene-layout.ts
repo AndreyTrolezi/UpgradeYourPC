@@ -15,7 +15,7 @@ export const SHOWCASE = {
   rearX: -1.8,
   trayZ: -0.98,
   sideZ: 1.075,
-  shroudY: -1.08,
+  shroudY: -1.14,
 } as const;
 
 export const ANCHORS = {
