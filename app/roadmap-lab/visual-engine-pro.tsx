@@ -54,7 +54,7 @@ function add(a: Point3,b: Point3): Point3 { return [a[0]+b[0],a[1]+b[1],a[2]+b[2
 
 function CaseGeometry({ visual, panel, shroud }: { visual: VisualProps; panel: boolean; shroud: boolean }) {
   const b = (position: Point3,size: Point3,color="#283649", opacity=1, outline=false) =>
-    <BoxPart {...visual} id="case" position={position} size={size} color={color} opacity={opacity} metallic={.72} outline={outline}/>;
+    <BoxPart key={position.join(":")} {...visual} id="case" position={position} size={size} color={color} opacity={opacity} metallic={.72} outline={outline}/>;
   return <group>
     {b([0,-2.03,0],[3.6,.13,2.15],"#48566b",1,true)}
     {b([0,2.03,0],[3.6,.12,2.15],"#48566b",1,true)}
@@ -83,7 +83,7 @@ function CaseGeometry({ visual, panel, shroud }: { visual: VisualProps; panel: b
 
 function Motherboard({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
   const b = (pos: Point3, size: Point3, color: string, outline=false) =>
-    <BoxPart {...visual} id="motherboard" position={pos} size={size} color={color} metallic={.48} outline={outline}/>;
+    <BoxPart key={pos.join(":")} {...visual} id="motherboard" position={pos} size={size} color={color} metallic={.48} outline={outline}/>;
   return <group position={placed(ANCHORS.motherboard,exploded,EXPLODED.motherboard)}>
     {b([0,0,0],[2.25,2.6,.085],"#07504c",true)}
     {b([-.27,.18,.066],[.72,.72,.09],"#1e293b",true)}
@@ -102,7 +102,7 @@ function Motherboard({ visual, exploded }: { visual: VisualProps; exploded: bool
 }
 
 function Cooler({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
-  const b = (pos: Point3,size: Point3,color: string) => <BoxPart {...visual} id="cooler" position={pos} size={size} color={color} metallic={.84}/>;
+  const b = (pos: Point3,size: Point3,color: string) => <BoxPart key={pos.join(":")} {...visual} id="cooler" position={pos} size={size} color={color} metallic={.84}/>;
   return <group position={placed(ANCHORS.cpuSocket,exploded,EXPLODED.cpu)}>
     {b([0,0,.18],[.70,.76,.31],"#475569")}
     {Array.from({length:13},(_,i)=>b([0,0,.19+i*.031],[.80,.86,.016],"#94a3b8"))}
@@ -111,8 +111,8 @@ function Cooler({ visual, exploded }: { visual: VisualProps; exploded: boolean }
   </group>;
 }
 function Memory({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
-  const b=(pos:Point3,size:Point3,color:string,outline=false)=><BoxPart {...visual} id="ram" position={pos} size={size} color={color} metallic={.38} outline={outline}/>;
-  return <group position={exploded ? EXPLODED.memory : [0,0,0]}>
+  const b=(pos:Point3,size:Point3,color:string,outline=false)=><BoxPart key={pos.join(":")} {...visual} id="ram" position={pos} size={size} color={color} metallic={.38} outline={outline}/>;
+  return <group position={placed([0,0,0],exploded,EXPLODED.memory)}>
     {[ANCHORS.ramA2,ANCHORS.ramB2].map((p,i)=><group key={i} position={p}>
       {b([0,0,.09],[.115,1.12,.16],"#0f766e",true)}
       {b([0,.61,.09],[.13,.10,.18],"#94a3b8")}
@@ -124,7 +124,7 @@ function Memory({ visual, exploded }: { visual: VisualProps; exploded: boolean }
 function GPU({ gpu, visual, exploded }: { gpu?: Part; visual: VisualProps; exploded: boolean }) {
   if(!gpu)return null;
   const b = (pos:Point3,size:Point3,color:string,outline=false)=>
-    <BoxPart {...visual} id="gpu" position={pos} size={size} color={color} metallic={.72} outline={outline}/>;
+    <BoxPart key={pos.join(":")} {...visual} id="gpu" position={pos} size={size} color={color} metallic={.72} outline={outline}/>;
   return <group position={placed(ANCHORS.pcieX16,exploded,EXPLODED.gpu)}>
     {b([1.08,-.24,.53],[2.46,.37,.96],"#111827",true)}
     {b([1.08,-.02,.53],[2.42,.065,.92],"#475569")}
@@ -140,7 +140,7 @@ function GPU({ gpu, visual, exploded }: { gpu?: Part; visual: VisualProps; explo
 }
 function PSU({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
   const b=(pos:Point3,size:Point3,color:string,outline=false)=>
-    <BoxPart {...visual} id="psu" position={pos} size={size} color={color} metallic={.77} outline={outline}/>;
+    <BoxPart key={pos.join(":")} {...visual} id="psu" position={pos} size={size} color={color} metallic={.77} outline={outline}/>;
   return <group position={placed(ANCHORS.psuBay,exploded,EXPLODED.psu)}>
     {b([0,0,0],[1.34,.70,1.18],"#334155",true)}
     {b([0,.36,0],[1.31,.028,1.12],"#64748b")}
