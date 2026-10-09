@@ -28,6 +28,8 @@ function Scene({selected,onPick,exploded,panel,gpu}:{selected:Id;onPick:(id:Id)=
     {part("case",[-1.75,0,0],[.12,4.1,1.9],"#475569",.8)}
     {part("case",[1.75,0,0],[.12,4.1,1.9],"#475569",.8)}
     {part("case",[0,0,-.95],[3.5,4.1,.1],"#334155",.8)}
+    {part("case",[0,-1.03,-.10],[3.28,.10,1.64],"#1e293b",.8)}
+    {part("case",[-1.57,-.77,.10],[.10,.62,1.64],"#64748b",.8)}
     {panel&&<Solid id="case" selected={selected} onPick={onPick} position={[0,0,.99]} size={[3.5,4.1,.06]} color="#64748b" transparent opacity={.16}/>}
     <group position={exploded?[-.5,.3,.7]:[0,0,0]}>
       {part("motherboard",[-.45,.25,-.79],[2.25,2.65,.13],"#115e59")}
@@ -49,16 +51,17 @@ function Scene({selected,onPick,exploded,panel,gpu}:{selected:Id;onPick:(id:Id)=
       </group>)}
     </group>
     {gpu&&<group position={exploded?[.4,-.3,1.5]:[0,0,0]}>
-      {part("gpu",[-.25,-.82,.10],[2.35,.18,.72],"#1e293b",.7)}
-      {part("gpu",[-.25,-.69,.10],[2.24,.07,.67],"#334155",.7)}
-      {[-.85,.32].map(x=><Fan key={x} position={[x,-.62,.10]} rotation={[-Math.PI/2,0,0]} id="gpu" selected={selected} onPick={onPick} scale={.68}/>)}
-      {part("gpu",[-1.46,-.80,.10],[.08,.42,.82],"#94a3b8",.9)}
+      {part("gpu",[-.25,-.59,-.29],[2.35,.18,.72],"#1e293b",.7)}
+      {part("gpu",[-.25,-.46,-.29],[2.24,.07,.67],"#334155",.7)}
+      {[-.85,.32].map(x=><Fan key={x} position={[x,-.39,-.29]} rotation={[-Math.PI/2,0,0]} id="gpu" selected={selected} onPick={onPick} scale={.68}/>)}
+      {part("gpu",[-1.46,-.57,-.29],[.08,.42,.82],"#94a3b8",.9)}
+      {part("gpu",[-.25,-.43,-.69],[1.9,.08,.12],"#d4af37",.35)}
     </group>}
     <group position={exploded?[.6,-.7,1.4]:[0,0,0]}>
-      {part("psu",[-.95,-1.49,-.29],[1.38,.75,1.10],"#334155",.8)}
-      <Fan position={[-.95,-1.05,-.29]} rotation={[-Math.PI/2,0,0]} id="psu" selected={selected} onPick={onPick} scale={.65}/>
+      {part("psu",[-.95,-1.52,-.23],[1.38,.75,1.10],"#334155",.8)}
+      <Fan position={[-.95,-1.10,-.23]} rotation={[-Math.PI/2,0,0]} id="psu" selected={selected} onPick={onPick} scale={.65}/>
     </group>
-    <group position={[1.48,.45,-.63]}>{[1.15,.32,-.51].map(y=><Fan key={y} position={[0,y,0]} rotation={[0,Math.PI/2,0]} id="case" selected={selected} onPick={onPick} scale={.8}/>)}</group>
+    <group position={[1.48,0,.05]}>{[1.15,.32,-.51].map(y=><Fan key={y} position={[0,y,0]} rotation={[0,0,0]} id="case" selected={selected} onPick={onPick} scale={.8}/>)}</group>
     <gridHelper args={[12,12,"#334155","#1e293b"]} position={[0,-2.2,0]}/>
   </group>;
 }
