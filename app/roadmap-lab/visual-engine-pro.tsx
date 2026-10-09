@@ -215,8 +215,8 @@ const GUIDE_ENTRY: Record<AssemblyPart, Point3> = {
   psu: [0,-.12,1.35],
   gpu: [0,.05,1.35],
 };
-function GuideArrival({ part, active, stepId, children }: {
-  part: AssemblyPart; active: boolean; stepId?: AssemblyStepId; children: ReactNode;
+function GuideArrival({ part, active, stepId, replayKey, children }: {
+  part: AssemblyPart; active: boolean; stepId?: AssemblyStepId; replayKey: number; children: ReactNode;
 }) {
   const group=useRef<Group>(null);
   useEffect(()=>{
@@ -224,7 +224,7 @@ function GuideArrival({ part, active, stepId, children }: {
     if (!g) return;
     const p=active ? GUIDE_ENTRY[part] : [0,0,0];
     g.position.set(p[0],p[1],p[2]);
-  },[active,part,stepId]);
+  },[active,part,stepId,replayKey]);
   useFrame((_,dt)=>{
     const g=group.current;
     if(!g || !active)return;
@@ -235,8 +235,8 @@ function GuideArrival({ part, active, stepId, children }: {
   return <group ref={group}>{children}</group>;
 }
 
-function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength, guideStep }: {
-  selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part; strength:number; guideStep?:AssemblyGuideStep|null;
+function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength, guideStep, replayKey }: {
+  selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part; strength:number; guideStep?:AssemblyGuideStep|null; replayKey:number;
 }) {
   const exploded=mode==="exploded";
   const visual:VisualProps={selected,isolate,xray:mode==="xray",onPick};
@@ -249,23 +249,23 @@ function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength, 
       ? <CaseOutline visual={visual} faint={mode==="exploded"}/>
       : <CaseGeometry visual={visual} panel={guideStep ? false : panel} shroud={guideStep ? false : shroud}/>}
     {(!guideStep || visibleAssemblyPart(guideStep,"motherboard",Boolean(gpu))) && 
-      <GuideArrival part="motherboard" active={guideStep?.arriving==="motherboard"} stepId={guideStep?.id}>
+      <GuideArrival part="motherboard" active={guideStep?.arriving==="motherboard"} stepId={guideStep?.id} replayKey={replayKey}>
         <Motherboard visual={visual} exploded={exploded} strength={strength}/>
       </GuideArrival>}
     {(!guideStep || visibleAssemblyPart(guideStep,"cooler",Boolean(gpu))) &&
-      <GuideArrival part="cooler" active={guideStep?.arriving==="cooler"} stepId={guideStep?.id}>
+      <GuideArrival part="cooler" active={guideStep?.arriving==="cooler"} stepId={guideStep?.id} replayKey={replayKey}>
         <Cooler visual={visual} exploded={exploded} strength={strength}/>
       </GuideArrival>}
     {(!guideStep || visibleAssemblyPart(guideStep,"ram",Boolean(gpu))) &&
-      <GuideArrival part="ram" active={guideStep?.arriving==="ram"} stepId={guideStep?.id}>
+      <GuideArrival part="ram" active={guideStep?.arriving==="ram"} stepId={guideStep?.id} replayKey={replayKey}>
         <Memory visual={visual} exploded={exploded} strength={strength}/>
       </GuideArrival>}
     {(!guideStep || visibleAssemblyPart(guideStep,"gpu",Boolean(gpu))) &&
-      <GuideArrival part="gpu" active={guideStep?.arriving==="gpu"} stepId={guideStep?.id}>
+      <GuideArrival part="gpu" active={guideStep?.arriving==="gpu"} stepId={guideStep?.id} replayKey={replayKey}>
         <GPU gpu={gpu} visual={visual} exploded={exploded} strength={strength}/>
       </GuideArrival>}
     {(!guideStep || visibleAssemblyPart(guideStep,"psu",Boolean(gpu))) &&
-      <GuideArrival part="psu" active={guideStep?.arriving==="psu"} stepId={guideStep?.id}>
+      <GuideArrival part="psu" active={guideStep?.arriving==="psu"} stepId={guideStep?.id} replayKey={replayKey}>
         <PSU visual={visual} exploded={exploded} strength={strength}/>
       </GuideArrival>}
     {!exploded && ANCHORS.frontFans.map((p,i)=><Fan key={i} id="case" position={p} rotation={[0,-Math.PI/2,0]} scale={.90} visual={visual}/>)}
@@ -285,6 +285,7 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
   const [shroud,setShroud]=useState(true);
   const [guideActive,setGuideActive]=useState(false);
   const [guideIndex,setGuideIndex]=useState(0);
+  const [guideReplayKey,setGuideReplayKey]=useState(0);
   const [guideChecked,setGuideChecked]=useState<Set<AssemblyStepId>>(()=>new Set());
   const hasGpu=Boolean(gpu);
   const guideSteps=useMemo(()=>assemblyGuideSteps(hasGpu),[hasGpu]);
@@ -329,6 +330,7 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
   const startGuide = () => {
     setGuideActive(true);
     setGuideChecked(new Set());
+    setGuideReplayKey(0);
     goToGuideStep(0);
   };
   const stopGuide = () => {
@@ -393,14 +395,15 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     <div className={guideActive ? "grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" : ""}>
       {guideActive && <div className="min-w-0 lg:order-2">
         <AssemblyGuideControls steps={guideSteps} index={currentGuideIndex} checked={guideChecked}
-          onIndex={goToGuideStep} onToggle={toggleGuideCheck} onClose={stopGuide}/>
+          onIndex={goToGuideStep} onToggle={toggleGuideCheck}
+          onReplay={()=>setGuideReplayKey(v=>v+1)} onClose={stopGuide}/>
       </div>}
       <div className={"min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-[#0d1629] h-[470px] md:h-[590px] "+(guideActive?"lg:order-1":"")}>
       <Canvas shadows camera={{position:[5.8,3.3,7.2],fov:40}} dpr={[1,1.6]} gl={{antialias:true}}>
         <Suspense fallback={null}>
           <Scene selected={selected} onPick={guideActive ? ()=>{} : setSelected} mode={mode}
             isolate={guideActive ? false : isolate} panel={panel} shroud={shroud} gpu={gpu}
-            strength={explosionStrength} guideStep={activeGuideStep}/>
+            strength={explosionStrength} guideStep={activeGuideStep} replayKey={guideReplayKey}/>
           <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={40} maxPolarAngle={Math.PI*.90}/>
         </Suspense>
       </Canvas>
