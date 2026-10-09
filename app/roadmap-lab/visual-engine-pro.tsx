@@ -231,16 +231,24 @@ function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength }
 export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { length: number; limit: number } }) {
   const [selected,setSelected]=useState<PartId>("gpu");
   const [mode,setMode]=useState<Mode>("assembled");
+  const [explosionStrength,setExplosionStrength]=useState(1);
   const [isolate,setIsolate]=useState(false);
   const [panel,setPanel]=useState(false);
   const [shroud,setShroud]=useState(true);
   const orbitRef = useRef<ComponentRef<typeof OrbitControls>>(null);
-  const cameraView = (position: Point3) => {
+  const cameraView = (position: Point3, target: Point3 = [0,0,0]) => {
     const orbit = orbitRef.current;
     if (!orbit) return;
     orbit.object.position.set(...position);
-    orbit.target.set(0,0,0);
+    orbit.target.set(...target);
     orbit.update();
+  };
+  const explodeCamera = (strength: number) =>
+    cameraView([10,6.2,17.4+(strength-1)*10],[0,-1.15,1.05]);
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    if (next==="exploded") explodeCamera(explosionStrength);
+    else cameraView([5.8,3.3,7.2]);
   };
   const length=clearance?.length??0;
   const limit=clearance?.limit??0;
@@ -257,16 +265,35 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     </div>
     <div className="flex flex-wrap gap-2">
       {(["assembled","exploded","xray","airflow"] as Mode[]).map(id=>
-        <button key={id} type="button" onClick={()=>setMode(id)} aria-pressed={mode===id}
+        <button key={id} type="button" onClick={()=>switchMode(id)} aria-pressed={mode===id}
           className={"rounded-lg border px-3 py-2 text-sm "+(mode===id?"border-cyan-400 bg-cyan-300/10 text-cyan-200":"border-slate-700 text-slate-300 hover:border-slate-500")}>
           {({assembled:"Montado",exploded:"Vista explodida",xray:"Raio-X",airflow:"Fluxo de ar"} as Record<Mode,string>)[id]}
         </button>)}
     </div>
+    <p className="text-sm text-sky-200" role="status">{modeDescription(mode,isolate)}</p>
+    {mode==="exploded" && <div className="flex flex-wrap items-center gap-3 text-sm">
+      <label htmlFor="explosion-strength" className="font-medium text-slate-200">Separação das peças</label>
+      <input id="explosion-strength" type="range" min="1" max="1.6" step="0.1" value={explosionStrength}
+        onChange={e=>{
+          const value=Number(e.target.value);
+          setExplosionStrength(value);
+          explodeCamera(value);
+        }}
+        className="accent-cyan-400 w-48" aria-valuetext={Math.round(explosionStrength*100)+"%"} />
+      <span className="text-cyan-200 tabular-nums">{Math.round(explosionStrength*100)}%</span>
+      <button type="button" onClick={()=>explodeCamera(explosionStrength)}
+        className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Enquadrar peças</button>
+    </div>}
+    {mode==="xray" && <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+      <span className="rounded-md border border-cyan-800 px-2 py-1 text-cyan-200">Sólido: peça selecionada</span>
+      <span className="rounded-md border border-slate-700 px-2 py-1">Translúcido: outras peças</span>
+      <span className="rounded-md border border-slate-700 px-2 py-1">Linhas: gabinete</span>
+    </div>}
     <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#0d1629] h-[470px] md:h-[590px]">
       <Canvas shadows camera={{position:[5.8,3.3,7.2],fov:40}} dpr={[1,1.6]} gl={{antialias:true}}>
         <Suspense fallback={null}>
-          <Scene selected={selected} onPick={setSelected} mode={mode} isolate={isolate} panel={panel} shroud={shroud} gpu={gpu}/>
-          <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={17} maxPolarAngle={Math.PI*.90}/>
+          <Scene selected={selected} onPick={setSelected} mode={mode} isolate={isolate} panel={panel} shroud={shroud} gpu={gpu} strength={explosionStrength}/>
+          <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={40} maxPolarAngle={Math.PI*.90}/>
         </Suspense>
       </Canvas>
     </div>
@@ -301,7 +328,6 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
         <p className="text-xs text-amber-200 mt-2">A geometria é genérica e não prova compatibilidade física, elétrica ou térmica. Consulte medidas oficiais.</p>
       </div>
     </div>
-    <p className="text-sm text-cyan-200" role="status">{modeDescription(mode,isolate)}</p>
     <p className="text-xs text-slate-400">Mouse: arrastar para girar • roda para zoom • clicar nas peças para inspecionar. Ventoinhas da GPU voltadas para baixo; fonte no compartimento inferior.</p>
   </section>;
 }
