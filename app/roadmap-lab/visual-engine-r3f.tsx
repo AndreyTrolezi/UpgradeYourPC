@@ -1,6 +1,6 @@
 "use client";
 import { Canvas, ThreeEvent } from "@react-three/fiber";
-import { OrbitControls, Edges, Text } from "@react-three/drei";
+import { OrbitControls, Edges } from "@react-three/drei";
 import { Suspense, useState } from "react";
 import type { Part } from "@/app/lib/types";
 
