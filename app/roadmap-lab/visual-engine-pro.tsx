@@ -283,6 +283,13 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
   const [isolate,setIsolate]=useState(false);
   const [panel,setPanel]=useState(false);
   const [shroud,setShroud]=useState(true);
+  const [guideActive,setGuideActive]=useState(false);
+  const [guideIndex,setGuideIndex]=useState(0);
+  const [guideChecked,setGuideChecked]=useState<Set<AssemblyStepId>>(()=>new Set());
+  const hasGpu=Boolean(gpu);
+  const guideSteps=useMemo(()=>assemblyGuideSteps(hasGpu),[hasGpu]);
+  const currentGuideIndex=Math.min(guideIndex,guideSteps.length-1);
+  const activeGuideStep=guideActive ? guideSteps[currentGuideIndex] : null;
   const orbitRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const cameraView = (position: Point3, target: Point3 = [0,0,0]) => {
     const orbit = orbitRef.current;
@@ -294,10 +301,40 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
   const explodeCamera = (strength: number) =>
     cameraView([10,6.2,17.4+(strength-1)*10],[0,-1.15,1.05]);
   const switchMode = (next: Mode) => {
+    setGuideActive(false);
     setMode(next);
     if (next==="exploded") explodeCamera(explosionStrength);
     else cameraView([5.8,3.3,7.2]);
   };
+  const goToGuideStep = (index: number) => {
+    const step=guideSteps[index];
+    if(!step)return;
+    setGuideIndex(index);
+    setMode("assembled");
+    setSelected(step.focus);
+    setIsolate(false);
+    setPanel(false);
+    setShroud(false);
+    if(step.focus==="psu") cameraView([4.6,-1.4,7.3]);
+    else if(step.focus==="gpu") cameraView([4.8,1,7.6]);
+    else cameraView([5.8,3.3,7.2]);
+  };
+  const startGuide = () => {
+    setGuideActive(true);
+    setGuideChecked(new Set());
+    goToGuideStep(0);
+  };
+  const stopGuide = () => {
+    setGuideActive(false);
+    setMode("assembled");
+    cameraView([5.8,3.3,7.2]);
+  };
+  const toggleGuideCheck = (id: AssemblyStepId) =>
+    setGuideChecked(previous=>{
+      const next=new Set(previous);
+      if(next.has(id))next.delete(id); else next.add(id);
+      return next;
+    });
   const presetCamera = (position: Point3) => {
     if (mode!=="exploded") return cameraView(position);
     const factor=2.25+(explosionStrength-1)*.75;
@@ -322,8 +359,14 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
           className={"rounded-lg border px-3 py-2 text-sm "+(mode===id?"border-cyan-400 bg-cyan-300/10 text-cyan-200":"border-slate-700 text-slate-300 hover:border-slate-500")}>
           {({assembled:"Montado",exploded:"Vista explodida",xray:"Raio-X",airflow:"Fluxo de ar"} as Record<Mode,string>)[id]}
         </button>)}
+      {!guideActive && <button type="button" onClick={startGuide}
+        className="rounded-lg border border-emerald-500 bg-emerald-950/30 px-3 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-950/60">
+        Iniciar montagem guiada
+      </button>}
     </div>
-    <p className="text-sm text-sky-200" role="status">{modeDescription(mode,isolate)}</p>
+    {guideActive && <AssemblyGuideControls steps={guideSteps} index={currentGuideIndex} checked={guideChecked}
+      onIndex={goToGuideStep} onToggle={toggleGuideCheck} onClose={stopGuide}/>}
+    {!guideActive && <p className="text-sm text-sky-200" role="status">{modeDescription(mode,isolate)}</p>}
     {mode==="exploded" && <div className="flex flex-wrap items-center gap-3 text-sm">
       <label htmlFor="explosion-strength" className="font-medium text-slate-200">Separação das peças</label>
       <input id="explosion-strength" type="range" min="1" max="1.6" step="0.1" value={explosionStrength}
@@ -345,7 +388,9 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#0d1629] h-[470px] md:h-[590px]">
       <Canvas shadows camera={{position:[5.8,3.3,7.2],fov:40}} dpr={[1,1.6]} gl={{antialias:true}}>
         <Suspense fallback={null}>
-          <Scene selected={selected} onPick={setSelected} mode={mode} isolate={isolate} panel={panel} shroud={shroud} gpu={gpu} strength={explosionStrength}/>
+          <Scene selected={selected} onPick={guideActive ? ()=>{} : setSelected} mode={mode}
+            isolate={guideActive ? false : isolate} panel={panel} shroud={shroud} gpu={gpu}
+            strength={explosionStrength} guideStep={activeGuideStep}/>
           <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={40} maxPolarAngle={Math.PI*.90}/>
         </Suspense>
       </Canvas>
@@ -359,10 +404,11 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     </div>
     <div className="flex flex-wrap gap-2">
       {(["case","motherboard","gpu","cooler","ram","psu"] as PartId[]).map(id=>
-        <button key={id} type="button" onClick={()=>setSelected(id)} aria-pressed={selected===id}
-          className={"rounded-lg border px-3 py-2 text-sm "+(selected===id?"border-cyan-400 bg-cyan-300/10 text-cyan-200":"border-slate-700 hover:border-slate-500")}>{PARTS[id].name}</button>)}
+        <button key={id} type="button" disabled={guideActive} onClick={()=>setSelected(id)} aria-pressed={selected===id}
+          title={guideActive ? "Durante o tutorial, selecione o passo desejado acima." : undefined}
+          className={"rounded-lg border px-3 py-2 text-sm "+(selected===id?"border-cyan-400 bg-cyan-300/10 text-cyan-200":"border-slate-700 hover:border-slate-500")+(guideActive?" opacity-50 cursor-not-allowed":"")}>{PARTS[id].name}</button>)}
     </div>
-    <div className="flex flex-wrap gap-3 text-sm">
+    {!guideActive && <div className="flex flex-wrap gap-3 text-sm">
       <label className="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isolate} onChange={e=>setIsolate(e.target.checked)}/> Isolar peça selecionada</label>
       <label className={"inline-flex items-center gap-2 "+(mode==="xray"||mode==="exploded"?"opacity-45 cursor-not-allowed":"cursor-pointer")}
         title="Este controle só altera a visualização Montado ou Fluxo de ar">
@@ -374,7 +420,7 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
         <input type="checkbox" checked={shroud} disabled={mode==="xray"||mode==="exploded"}
           onChange={e=>setShroud(e.target.checked)}/> Cobertura da fonte
       </label>
-    </div>
+    </div>}
     <div className="grid gap-4 md:grid-cols-2">
       <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Componente selecionado</p>
