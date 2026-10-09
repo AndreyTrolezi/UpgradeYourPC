@@ -1,13 +1,14 @@
 "use client";
 
 import { Canvas, ThreeEvent } from "@react-three/fiber";
-import { Edges, OrbitControls } from "@react-three/drei";
+import { Edges, Line, OrbitControls } from "@react-three/drei";
 import { Suspense, useState } from "react";
 import { ANCHORS, EXPLODED, SHOWCASE, placed, type Point3 } from "@/app/roadmap-lab/scene-layout";
 import type { Part } from "@/app/lib/types";
+import { canDisplayPanel, modeDescription, presentPart, type VisualMode } from "@/app/roadmap-lab/visual-mode-rules";
 
 type PartId = "case" | "motherboard" | "gpu" | "cooler" | "ram" | "psu";
-type Mode = "assembled" | "exploded" | "xray" | "airflow";
+type Mode = VisualMode;
 
 const PARTS: Record<PartId, { name: string; description: string; attachment: string }> = {
   case: { name: "Gabinete", description: "Estrutura, bandeja da placa-mãe, suporte frontal de fans, slots traseiros e compartimento da fonte.", attachment: "Chassi e suportes de instalação" },
@@ -24,20 +25,25 @@ type BoxProps = VisualProps & {
   opacity?: number; metallic?: number; outline?: boolean;
 };
 function BoxPart({ id, position, size, color, selected, isolate, xray, onPick, opacity = 1, metallic = .3, outline = false }: BoxProps) {
-  const alpha = isolate && selected !== id ? .10 : Math.min(opacity, xray ? .30 : 1);
-  return <mesh position={position} castShadow receiveShadow onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onPick(id); }}>
+  const presentation = presentPart(id, selected, xray ? "xray" : "assembled", isolate, opacity);
+  if (!presentation.visible) return null;
+  return <mesh position={position} castShadow={presentation.depthWrite} receiveShadow
+    onClick={presentation.pickable ? (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onPick(id); } : undefined}>
     <boxGeometry args={size}/>
-    <meshStandardMaterial color={color} metalness={metallic} roughness={.52} transparent={alpha < 1} opacity={alpha} depthWrite={alpha >= 1}/>
+    <meshStandardMaterial color={color} metalness={metallic} roughness={.52}
+      transparent={presentation.opacity < 1} opacity={presentation.opacity} depthWrite={presentation.depthWrite}/>
     {selected === id && outline && <Edges color="#67e8f9" threshold={18}/>}
   </mesh>;
 }
 function Fan({ id, position, rotation = [0,0,0], scale = 1, visual }: {
   id: PartId; position: Point3; rotation?: Point3; scale?: number; visual: VisualProps;
 }) {
-  const faded = visual.isolate && visual.selected !== id;
-  const opacity = faded ? .10 : visual.xray ? .38 : 1;
-  const material = (color: string) => <meshStandardMaterial color={color} metalness={.45} roughness={.35} transparent={opacity < 1} opacity={opacity}/>;
-  return <group position={position} rotation={rotation} scale={scale} onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); visual.onPick(id); }}>
+  const presentation = presentPart(id, visual.selected, visual.xray ? "xray" : "assembled", visual.isolate);
+  if (!presentation.visible) return null;
+  const material = (color: string) => <meshStandardMaterial color={color} metalness={.45} roughness={.35}
+    transparent={presentation.opacity < 1} opacity={presentation.opacity} depthWrite={presentation.depthWrite}/>;
+  return <group position={position} rotation={rotation} scale={scale}
+    onClick={presentation.pickable ? (e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); visual.onPick(id); } : undefined}>
     {([[-.37,0,.07,.76],[.37,0,.07,.76],[0,.37,.76,.07],[0,-.37,.76,.07]] as const).map(([x,y,w,h],i)=>
       <mesh position={[x,y,0]} key={i}><boxGeometry args={[w,h,.09]}/>{material(visual.selected === id ? "#67e8f9" : "#334155")}</mesh>)}
     <mesh><torusGeometry args={[.29,.025,10,36]}/>{material("#64748b")}</mesh>
@@ -50,7 +56,6 @@ function Fan({ id, position, rotation = [0,0,0], scale = 1, visual }: {
     <mesh rotation={[Math.PI/2,0,0]}><cylinderGeometry args={[.085,.085,.09,20]}/>{material("#0f172a")}</mesh>
   </group>;
 }
-function add(a: Point3,b: Point3): Point3 { return [a[0]+b[0],a[1]+b[1],a[2]+b[2]]; }
 
 function CaseGeometry({ visual, panel, shroud }: { visual: VisualProps; panel: boolean; shroud: boolean }) {
   const b = (position: Point3,size: Point3,color="#283649", opacity=1, outline=false) =>
@@ -77,7 +82,11 @@ function CaseGeometry({ visual, panel, shroud }: { visual: VisualProps; panel: b
     {b([1.73,1.82,-.02],[.08,.09,1.54],"#64748b")}
     {b([1.73,-1.82,-.02],[.08,.09,1.54],"#64748b")}
     {[-.02,.82,-.85].map(y=>b([1.72,y,-.02],[.055,.045,1.51],"#475569",.7))}
-    {panel && b([0,0,1.08],[3.56,4.06,.045],"#93c5fd",.13)}
+    {canDisplayPanel(visual.xray ? "xray" : "assembled",visual.isolate,visual.selected,panel) && <group>
+      {b([0,0,1.08],[3.56,4.06,.045],"#93c5fd",.36)}
+      {b([0,1.99,1.09],[3.52,.07,.08],"#64748b")}
+      {b([0,-1.99,1.09],[3.52,.07,.08],"#64748b")}
+    </group>}
   </group>;
 }
 
@@ -164,6 +173,26 @@ function Airflow() {
   </group>;
 }
 
+function ExplodedGuides() {
+  const guides: Array<{ id: string; start: Point3; offset: Point3 }> = [
+    { id: "motherboard", start: ANCHORS.motherboard, offset: EXPLODED.motherboard },
+    { id: "cooler", start: ANCHORS.cpuSocket, offset: EXPLODED.cpu },
+    { id: "ram", start: ANCHORS.ramA2, offset: EXPLODED.memory },
+    { id: "gpu", start: ANCHORS.pcieX16, offset: EXPLODED.gpu },
+    { id: "psu", start: ANCHORS.psuBay, offset: EXPLODED.psu },
+  ];
+  return <group>
+    {guides.map(g => <group key={g.id}>
+      <Line points={[g.start,placed(g.start,true,g.offset)]} color="#67e8f9"
+        dashed dashSize={.10} gapSize={.09} lineWidth={1.6}/>
+      <mesh position={g.start}>
+        <sphereGeometry args={[.045,10,10]}/>
+        <meshBasicMaterial color="#67e8f9" depthTest={false}/>
+      </mesh>
+    </group>)}
+  </group>;
+}
+
 function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu }: {
   selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part;
 }) {
@@ -182,7 +211,8 @@ function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu }: {
     <PSU visual={visual} exploded={exploded}/>
     {ANCHORS.frontFans.map((p,i)=><Fan key={i} id="case" position={p} rotation={[0,-Math.PI/2,0]} scale={.90} visual={visual}/>)}
     <Fan id="case" position={ANCHORS.rearFan} rotation={[0,Math.PI/2,0]} scale={.78} visual={visual}/>
-    {mode==="airflow"&&<Airflow/>}
+    {mode==="exploded" && !isolate && <ExplodedGuides/>}
+    {mode==="airflow" && !isolate && <Airflow/>}
     <gridHelper args={[12,12,"#475569","#1e293b"]} position={[0,-2.26,0]}/>
   </>;
 }
@@ -245,6 +275,7 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
         <p className="text-xs text-amber-200 mt-2">A geometria é genérica e não prova compatibilidade física, elétrica ou térmica. Consulte medidas oficiais.</p>
       </div>
     </div>
+    <p className="text-sm text-cyan-200" role="status">{modeDescription(mode,isolate)}</p>
     <p className="text-xs text-slate-400">Mouse: arrastar para girar • roda para zoom • clicar nas peças para inspecionar. Ventoinhas da GPU voltadas para baixo; fonte no compartimento inferior.</p>
   </section>;
 }
