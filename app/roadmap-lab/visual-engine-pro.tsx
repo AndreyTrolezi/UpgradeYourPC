@@ -311,8 +311,16 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     </div>
     <div className="flex flex-wrap gap-3 text-sm">
       <label className="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isolate} onChange={e=>setIsolate(e.target.checked)}/> Isolar peça selecionada</label>
-      <label className="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={panel} onChange={e=>setPanel(e.target.checked)}/> Painel lateral</label>
-      <label className="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={shroud} onChange={e=>setShroud(e.target.checked)}/> Cobertura da fonte</label>
+      <label className={"inline-flex items-center gap-2 "+(mode==="xray"||mode==="exploded"?"opacity-45 cursor-not-allowed":"cursor-pointer")}
+        title="Este controle só altera a visualização Montado ou Fluxo de ar">
+        <input type="checkbox" checked={panel} disabled={mode==="xray"||mode==="exploded"}
+          onChange={e=>setPanel(e.target.checked)}/> Painel lateral
+      </label>
+      <label className={"inline-flex items-center gap-2 "+(mode==="xray"||mode==="exploded"?"opacity-45 cursor-not-allowed":"cursor-pointer")}
+        title="Este controle só altera a visualização Montado ou Fluxo de ar">
+        <input type="checkbox" checked={shroud} disabled={mode==="xray"||mode==="exploded"}
+          onChange={e=>setShroud(e.target.checked)}/> Cobertura da fonte
+      </label>
     </div>
     <div className="grid gap-4 md:grid-cols-2">
       <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
