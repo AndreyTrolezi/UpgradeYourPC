@@ -250,6 +250,11 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     if (next==="exploded") explodeCamera(explosionStrength);
     else cameraView([5.8,3.3,7.2]);
   };
+  const presetCamera = (position: Point3) => {
+    if (mode!=="exploded") return cameraView(position);
+    const factor=2.25+(explosionStrength-1)*.75;
+    cameraView([position[0]*factor,position[1]*factor-1.15,position[2]*factor+1.05],[0,-1.15,1.05]);
+  };
   const length=clearance?.length??0;
   const limit=clearance?.limit??0;
   const status=!gpu ? "Nenhuma placa de vídeo selecionada." :
@@ -299,10 +304,10 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     </div>
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="text-slate-400 mr-1">Câmera:</span>
-      <button type="button" onClick={()=>cameraView([5.8,3.3,7.2])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Isométrica</button>
-      <button type="button" onClick={()=>cameraView([1.2,1.6,8])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Lateral aberta</button>
-      <button type="button" onClick={()=>cameraView([7.5,1.4,3.3])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Frontal</button>
-      <button type="button" onClick={()=>cameraView([2.2,-3.8,6.2])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Parte inferior</button>
+      <button type="button" onClick={()=>presetCamera([5.8,3.3,7.2])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Isométrica</button>
+      <button type="button" onClick={()=>presetCamera([1.2,1.6,8])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Lateral aberta</button>
+      <button type="button" onClick={()=>presetCamera([7.5,1.4,3.3])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Frontal</button>
+      <button type="button" onClick={()=>presetCamera([2.2,-3.8,6.2])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Parte inferior</button>
     </div>
     <div className="flex flex-wrap gap-2">
       {(["case","motherboard","gpu","cooler","ram","psu"] as PartId[]).map(id=>
