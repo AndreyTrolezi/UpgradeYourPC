@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, ShieldCheck, X } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, CircleAlert, RotateCcw, ShieldCheck, X } from "lucide-react";
 import {
   assemblyGuideProgress,
   type AssemblyGuideStep,
@@ -8,13 +8,14 @@ import {
 } from "@/app/lib/assembly-guide";
 
 export function AssemblyGuideControls({
-  steps, index, checked, onIndex, onToggle, onClose,
+  steps, index, checked, onIndex, onToggle, onReplay, onClose,
 }: {
   steps: AssemblyGuideStep[];
   index: number;
   checked: ReadonlySet<AssemblyStepId>;
   onIndex: (next: number) => void;
   onToggle: (id: AssemblyStepId) => void;
+  onReplay: () => void;
   onClose: () => void;
 }) {
   const current = steps[index];
@@ -74,6 +75,10 @@ export function AssemblyGuideControls({
       </div>
     </div>
 
+    {current.arriving && <button type="button" onClick={onReplay}
+      className="inline-flex items-center gap-1.5 rounded-lg border border-cyan-800 px-3 py-2 text-sm text-cyan-200 hover:bg-cyan-950/40">
+      <RotateCcw size={15}/> Reproduzir encaixe ilustrativo
+    </button>}
     <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3">
       <button type="button" onClick={()=>onIndex(Math.max(0,index-1))} disabled={index===0}
         className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-3 py-2 text-sm disabled:opacity-40">
