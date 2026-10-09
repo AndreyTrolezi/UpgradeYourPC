@@ -23,7 +23,7 @@ export const ANCHORS = {
   cpuSocket: [-0.70, 0.48, -0.65] as Point3,
   ramA2: [0.34, 0.63, -0.65] as Point3,
   ramB2: [0.56, 0.63, -0.65] as Point3,
-  pcieX16: [-1.05, -0.54, -0.65] as Point3,
+  pcieX16: [-1.37, -0.54, -0.65] as Point3,
   psuBay: [-0.94, -1.55, -0.28] as Point3,
   frontFans: [
     [1.56, 1.15, -0.02],
