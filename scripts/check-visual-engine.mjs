@@ -24,7 +24,8 @@ assert.equal(ANCHORS.ramA2[0] < ANCHORS.ramB2[0], true);
 assert.ok(Math.abs(ANCHORS.cpuSocket[1] - (ANCHORS.motherboard[1] + .18)) < .02);
 assert.ok(Math.abs(ANCHORS.cpuSocket[0] - (ANCHORS.motherboard[0] - .28)) < .02);
 assert.ok(ANCHORS.pcieX16[1] < ANCHORS.cpuSocket[1]);
-assert.ok(ANCHORS.psuBay[1] + .35 < SHOWCASE.shroudY, "PSU must remain below shroud");
+assert.ok(ANCHORS.psuBay[1] + .35 < SHOWCASE.shroudY - .03, "PSU must remain below shroud");
+assert.ok(ANCHORS.pcieX16[1] - .52 > SHOWCASE.shroudY + .03, "GPU fans must not collide with PSU shroud");
 assert.ok(ANCHORS.frontFans.every(p => p[1] - .36 > SHOWCASE.shroudY), "Front fans must clear shroud");
 assert.ok(ANCHORS.rearFan[0] < ANCHORS.motherboard[0]);
 for (const [key, delta] of Object.entries(EXPLODED)) {
