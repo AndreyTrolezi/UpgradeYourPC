@@ -38,7 +38,7 @@ Acesse `http://localhost:5173/roadmap-lab`.
 7. **Painel lateral e isolamento:** a opção de painel deve mostrar vidro visível no modo normal, sem capturar cliques. No Raio-X e na Vista explodida, os controles de painel lateral e cobertura da fonte ficam desabilitados para não parecer que estão funcionando sem efeito. Com isolamento ativo, os demais componentes desaparecem.
 8. **Sem GPU:** escolher a opção vazia no catálogo deve omitir o modelo da placa de vídeo.
 9. **Câmera:** conferir os presets Isométrica, Lateral aberta, Frontal e Parte inferior, além dos controles orbitais de rotação e zoom.
-10. **Montagem guiada:** clicar em "Iniciar montagem guiada", navegar pelos passos e confirmar que a cena começa com o gabinete e revela placa-mãe, RAM, cooler, fonte e GPU, na ordem do roteiro. O componente introduzido no passo deve se deslocar para o encaixe ilustrativo. Verificar o resumo, os avisos e o controle de passos verificados.
+10. **Montagem guiada:** clicar em "Iniciar montagem guiada", navegar pelos passos e confirmar que a cena começa com o gabinete e revela placa-mãe, RAM, cooler, fonte e GPU, na ordem do roteiro. O componente introduzido no passo deve se deslocar para o encaixe ilustrativo. Conferir o botão "Reproduzir encaixe ilustrativo", que reinicia apenas a animação da peça da etapa. Verificar o resumo, os avisos e o controle de passos verificados.
 11. **Montagem sem GPU:** selecionar "Sem GPU" na lista de peças, iniciar o guia novamente e confirmar que o passo dedicado à GPU desaparece e a placa não aparece na cena.
 12. **Modos livres:** encerrar a montagem guiada e conferir Montado, Explodido, Raio-X, Fluxo de ar, seleção e isolamento, sem regressões.
 
