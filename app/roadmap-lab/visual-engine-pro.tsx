@@ -364,8 +364,6 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
         Iniciar montagem guiada
       </button>}
     </div>
-    {guideActive && <AssemblyGuideControls steps={guideSteps} index={currentGuideIndex} checked={guideChecked}
-      onIndex={goToGuideStep} onToggle={toggleGuideCheck} onClose={stopGuide}/>}
     {!guideActive && <p className="text-sm text-sky-200" role="status">{modeDescription(mode,isolate)}</p>}
     {mode==="exploded" && <div className="flex flex-wrap items-center gap-3 text-sm">
       <label htmlFor="explosion-strength" className="font-medium text-slate-200">Separação das peças</label>
@@ -385,7 +383,12 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
       <span className="rounded-md border border-slate-700 px-2 py-1">Translúcido: outras peças</span>
       <span className="rounded-md border border-slate-700 px-2 py-1">Linhas: gabinete</span>
     </div>}
-    <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#0d1629] h-[470px] md:h-[590px]">
+    <div className={guideActive ? "grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" : ""}>
+      {guideActive && <div className="min-w-0 lg:order-2">
+        <AssemblyGuideControls steps={guideSteps} index={currentGuideIndex} checked={guideChecked}
+          onIndex={goToGuideStep} onToggle={toggleGuideCheck} onClose={stopGuide}/>
+      </div>}
+      <div className={"min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-[#0d1629] h-[470px] md:h-[590px] "+(guideActive?"lg:order-1":"")}>
       <Canvas shadows camera={{position:[5.8,3.3,7.2],fov:40}} dpr={[1,1.6]} gl={{antialias:true}}>
         <Suspense fallback={null}>
           <Scene selected={selected} onPick={guideActive ? ()=>{} : setSelected} mode={mode}
@@ -394,6 +397,7 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
           <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={40} maxPolarAngle={Math.PI*.90}/>
         </Suspense>
       </Canvas>
+      </div>
     </div>
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="text-slate-400 mr-1">Câmera:</span>
