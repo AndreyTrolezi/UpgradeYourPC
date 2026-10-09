@@ -20,6 +20,7 @@ export function AssemblyGuideControls({
   const current = steps[index];
   if (!current) return null;
   const progress = assemblyGuideProgress(steps,checked);
+  const verifiedCount = steps.filter(item=>checked.has(item.id)).length;
   const completed = checked.has(current.id);
 
   return <section className="rounded-xl border border-cyan-900 bg-cyan-950/20 p-4 md:p-5 space-y-4" aria-label="Montagem guiada">
@@ -34,7 +35,7 @@ export function AssemblyGuideControls({
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-3 text-xs text-slate-300">
         <span>Etapa {index+1} de {steps.length}</span>
-        <span>{checked.size} verificadas nesta sessão • {progress}%</span>
+        <span>{verifiedCount} verificadas nesta sessão • {progress}%</span>
       </div>
       <div role="progressbar" aria-label="Progresso do tutorial" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}
         className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
