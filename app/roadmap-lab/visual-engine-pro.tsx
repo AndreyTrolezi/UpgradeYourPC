@@ -195,10 +195,10 @@ function ExplodedGuides({ strength, gpuAvailable }: { strength: number; gpuAvail
 
 function CaseOutline({ visual, faint }: { visual: VisualProps; faint: boolean }) {
   if (visual.isolate && visual.selected !== "case") return null;
-  return <mesh position={[0,0,0]} onClick={undefined}>
+  return <mesh position={[0,0,0]}>
     <boxGeometry args={[SHOWCASE.width, SHOWCASE.height, SHOWCASE.depth]}/>
-    <meshBasicMaterial color={visual.selected==="case" ? "#67e8f9" : "#64748b"}
-      wireframe transparent opacity={faint ? .16 : .32} depthWrite={false} depthTest={false}/>
+    <meshBasicMaterial color="#0d1629" transparent opacity={0} depthWrite={false}/>
+    <Edges color={visual.selected==="case" ? "#67e8f9" : (faint ? "#334155" : "#64748b")} threshold={15}/>
   </mesh>;
 }
 
