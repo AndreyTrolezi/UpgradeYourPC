@@ -35,8 +35,12 @@ const shell=presentPart("case","gpu","xray",false);
 assert.ok(shell.opacity < .2,"X-ray casing must be highly transparent");
 assert.equal(shell.pickable,false,"X-ray shell must allow selecting internal hardware");
 for(const id of parts.filter(p=>p!=="case")) {
-  assert.equal(presentPart(id,"gpu","xray",false).opacity,1,"Internal parts stay opaque");
+  const state=presentPart(id,"gpu","xray",false);
+  assert.equal(state.opacity,id==="gpu"?1:.20,"Only selected X-ray part stays opaque");
+  assert.equal(state.pickable,id==="gpu","X-ray ghost components must not block selecting the focus");
 }
+assert.equal(presentPart("cooler","cooler","xray",false).opacity,1);
+assert.equal(presentPart("gpu","cooler","xray",false).opacity,.20);
 const glass=presentPart("case","gpu","assembled",false,.36);
 assert.equal(glass.visible,true);
 assert.equal(glass.pickable,false,"Glass should not intercept raycasts");
@@ -44,6 +48,7 @@ assert.equal(glass.depthWrite,false,"Glass should not hide parts behind it");
 assert.equal(canDisplayPanel("assembled",false,"gpu",true),true);
 assert.equal(canDisplayPanel("assembled",false,"gpu",false),false);
 assert.equal(canDisplayPanel("xray",false,"gpu",true),false);
+assert.equal(canDisplayPanel("exploded",false,"gpu",true),false);
 assert.equal(canDisplayPanel("assembled",true,"gpu",true),false);
 assert.equal(canDisplayPanel("assembled",true,"case",true),true);
 for(const mode of modes) assert.ok(modeDescription(mode,false).length>20);

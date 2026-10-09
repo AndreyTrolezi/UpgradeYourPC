@@ -35,16 +35,22 @@ export const ANCHORS = {
 
 /** Displacements affect the exploded diagram only, never mounted positions. */
 export const EXPLODED = {
-  motherboard: [-0.18, 0.13, 0.40] as Point3,
-  cpu: [-0.65, 0.10, 1.40] as Point3,
-  memory: [0.15, 0.65, 1.15] as Point3,
-  gpu: [0.02, -0.48, 1.35] as Point3,
-  psu: [-0.30, -0.35, 1.15] as Point3,
+  // Separate components into non-overlapping inspection regions, outside the
+  // chassis. Render the cabinet only as a wireframe in this mode.
+  motherboard: [-1.45, 0.05, 1.70] as Point3,
+  cpu: [-2.65, 0.55, 2.75] as Point3,
+  memory: [2.45, 0.85, 2.20] as Point3,
+  gpu: [-0.25, -1.50, 2.65] as Point3,
+  psu: [2.40, -2.75, 2.60] as Point3,
 } as const;
 
-export function placed(anchor: Point3, exploded: boolean, displacement: Point3 = [0, 0, 0]): Point3 {
+export function placed(anchor: Point3, exploded: boolean, displacement: Point3 = [0, 0, 0], strength = 1): Point3 {
   if (!exploded) return [...anchor];
-  return [anchor[0] + displacement[0], anchor[1] + displacement[1], anchor[2] + displacement[2]];
+  return [
+    anchor[0] + displacement[0] * strength,
+    anchor[1] + displacement[1] * strength,
+    anchor[2] + displacement[2] * strength,
+  ];
 }
 
 export function inBounds([x, y, z]: Point3, epsilon = 0): boolean {

@@ -90,10 +90,10 @@ function CaseGeometry({ visual, panel, shroud }: { visual: VisualProps; panel: b
   </group>;
 }
 
-function Motherboard({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
+function Motherboard({ visual, exploded, strength }: { visual: VisualProps; exploded: boolean; strength: number }) {
   const b = (pos: Point3, size: Point3, color: string, outline=false) =>
     <BoxPart key={pos.join(":")} {...visual} id="motherboard" position={pos} size={size} color={color} metallic={.48} outline={outline}/>;
-  return <group position={placed(ANCHORS.motherboard,exploded,EXPLODED.motherboard)}>
+  return <group position={placed(ANCHORS.motherboard,exploded,EXPLODED.motherboard,strength)}>
     {b([0,0,0],[2.25,2.6,.085],"#07504c",true)}
     {b([-.27,.18,.066],[.72,.72,.09],"#1e293b",true)}
     {b([-.27,.18,.124],[.54,.54,.018],"#94a3b8")}
@@ -110,18 +110,18 @@ function Motherboard({ visual, exploded }: { visual: VisualProps; exploded: bool
   </group>;
 }
 
-function Cooler({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
+function Cooler({ visual, exploded, strength }: { visual: VisualProps; exploded: boolean; strength: number }) {
   const b = (pos: Point3,size: Point3,color: string) => <BoxPart key={pos.join(":")} {...visual} id="cooler" position={pos} size={size} color={color} metallic={.84}/>;
-  return <group position={placed(ANCHORS.cpuSocket,exploded,EXPLODED.cpu)}>
+  return <group position={placed(ANCHORS.cpuSocket,exploded,EXPLODED.cpu,strength)}>
     {b([0,0,.18],[.70,.76,.31],"#475569")}
     {Array.from({length:13},(_,i)=>b([0,0,.19+i*.031],[.80,.86,.016],"#94a3b8"))}
     {[-.25,0,.25].map(x=>b([x,0,.44],[.042,.98,.042],"#d6aa65"))}
     <Fan id="cooler" position={[0,0,.69]} scale={.90} visual={visual}/>
   </group>;
 }
-function Memory({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
+function Memory({ visual, exploded, strength }: { visual: VisualProps; exploded: boolean; strength: number }) {
   const b=(pos:Point3,size:Point3,color:string,outline=false)=><BoxPart key={pos.join(":")} {...visual} id="ram" position={pos} size={size} color={color} metallic={.38} outline={outline}/>;
-  return <group position={placed([0,0,0],exploded,EXPLODED.memory)}>
+  return <group position={placed([0,0,0],exploded,EXPLODED.memory,strength)}>
     {[ANCHORS.ramA2,ANCHORS.ramB2].map((p,i)=><group key={i} position={p}>
       {b([0,0,.09],[.115,1.12,.16],"#0f766e",true)}
       {b([0,.61,.09],[.13,.10,.18],"#94a3b8")}
@@ -130,11 +130,11 @@ function Memory({ visual, exploded }: { visual: VisualProps; exploded: boolean }
   </group>;
 }
 
-function GPU({ gpu, visual, exploded }: { gpu?: Part; visual: VisualProps; exploded: boolean }) {
+function GPU({ gpu, visual, exploded, strength }: { gpu?: Part; visual: VisualProps; exploded: boolean; strength: number }) {
   if(!gpu)return null;
   const b = (pos:Point3,size:Point3,color:string,outline=false)=>
     <BoxPart key={pos.join(":")} {...visual} id="gpu" position={pos} size={size} color={color} metallic={.72} outline={outline}/>;
-  return <group position={placed(ANCHORS.pcieX16,exploded,EXPLODED.gpu)}>
+  return <group position={placed(ANCHORS.pcieX16,exploded,EXPLODED.gpu,strength)}>
     {b([1.08,-.24,.53],[2.46,.37,.96],"#111827",true)}
     {b([1.08,-.02,.53],[2.42,.065,.92],"#475569")}
     {b([1.08,.02,.09],[1.70,.05,.18],"#0e7490")}
@@ -147,10 +147,10 @@ function GPU({ gpu, visual, exploded }: { gpu?: Part; visual: VisualProps; explo
     {b([1.61,-.01,.71],[.23,.10,.16],"#0f172a")}
   </group>;
 }
-function PSU({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
+function PSU({ visual, exploded, strength }: { visual: VisualProps; exploded: boolean; strength: number }) {
   const b=(pos:Point3,size:Point3,color:string,outline=false)=>
     <BoxPart key={pos.join(":")} {...visual} id="psu" position={pos} size={size} color={color} metallic={.77} outline={outline}/>;
-  return <group position={placed(ANCHORS.psuBay,exploded,EXPLODED.psu)}>
+  return <group position={placed(ANCHORS.psuBay,exploded,EXPLODED.psu,strength)}>
     {b([0,0,0],[1.34,.70,1.18],"#334155",true)}
     {b([0,.36,0],[1.31,.028,1.12],"#64748b")}
     <Fan id="psu" position={[0,-.365,0]} rotation={[Math.PI/2,0,0]} scale={.74} visual={visual}/>
@@ -173,7 +173,7 @@ function Airflow() {
   </group>;
 }
 
-function ExplodedGuides() {
+function ExplodedGuides({ strength, gpuAvailable }: { strength: number; gpuAvailable: boolean }) {
   const guides: Array<{ id: string; start: Point3; offset: Point3 }> = [
     { id: "motherboard", start: ANCHORS.motherboard, offset: EXPLODED.motherboard },
     { id: "cooler", start: ANCHORS.cpuSocket, offset: EXPLODED.cpu },
@@ -182,8 +182,8 @@ function ExplodedGuides() {
     { id: "psu", start: ANCHORS.psuBay, offset: EXPLODED.psu },
   ];
   return <group>
-    {guides.map(g => <group key={g.id}>
-      <Line points={[g.start,placed(g.start,true,g.offset)]} color="#67e8f9"
+    {guides.filter(g => gpuAvailable || g.id !== "gpu").map(g => <group key={g.id}>
+      <Line points={[g.start,placed(g.start,true,g.offset,strength)]} color="#67e8f9"
         dashed dashSize={.10} gapSize={.09} lineWidth={1.6}/>
       <mesh position={g.start}>
         <sphereGeometry args={[.045,10,10]}/>
@@ -193,8 +193,17 @@ function ExplodedGuides() {
   </group>;
 }
 
-function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu }: {
-  selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part;
+function CaseOutline({ visual, faint }: { visual: VisualProps; faint: boolean }) {
+  if (visual.isolate && visual.selected !== "case") return null;
+  return <mesh position={[0,0,0]}>
+    <boxGeometry args={[SHOWCASE.width, SHOWCASE.height, SHOWCASE.depth]}/>
+    <meshBasicMaterial color="#0d1629" transparent opacity={0} depthWrite={false}/>
+    <Edges color={visual.selected==="case" ? "#67e8f9" : (faint ? "#334155" : "#64748b")} threshold={15}/>
+  </mesh>;
+}
+
+function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength }: {
+  selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part; strength:number;
 }) {
   const exploded=mode==="exploded";
   const visual:VisualProps={selected,isolate,xray:mode==="xray",onPick};
@@ -203,33 +212,43 @@ function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu }: {
     <hemisphereLight args={["#a5d8ff","#172033",1.05]}/>
     <directionalLight position={[4,8,7]} intensity={2.0} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024}/>
     <pointLight position={[-1.3,1.5,2.0]} intensity={16} distance={8} color="#38bdf8"/>
-    <CaseGeometry visual={visual} panel={panel} shroud={shroud}/>
-    <Motherboard visual={visual} exploded={exploded}/>
-    <Cooler visual={visual} exploded={exploded}/>
-    <Memory visual={visual} exploded={exploded}/>
-    <GPU gpu={gpu} visual={visual} exploded={exploded}/>
-    <PSU visual={visual} exploded={exploded}/>
-    {ANCHORS.frontFans.map((p,i)=><Fan key={i} id="case" position={p} rotation={[0,-Math.PI/2,0]} scale={.90} visual={visual}/>)}
-    <Fan id="case" position={ANCHORS.rearFan} rotation={[0,Math.PI/2,0]} scale={.78} visual={visual}/>
-    {mode==="exploded" && !isolate && <ExplodedGuides/>}
+    {mode==="exploded" || mode==="xray"
+      ? <CaseOutline visual={visual} faint={mode==="exploded"}/>
+      : <CaseGeometry visual={visual} panel={panel} shroud={shroud}/>}
+    <Motherboard visual={visual} exploded={exploded} strength={strength}/>
+    <Cooler visual={visual} exploded={exploded} strength={strength}/>
+    <Memory visual={visual} exploded={exploded} strength={strength}/>
+    <GPU gpu={gpu} visual={visual} exploded={exploded} strength={strength}/>
+    <PSU visual={visual} exploded={exploded} strength={strength}/>
+    {!exploded && ANCHORS.frontFans.map((p,i)=><Fan key={i} id="case" position={p} rotation={[0,-Math.PI/2,0]} scale={.90} visual={visual}/>)}
+    {!exploded && <Fan id="case" position={ANCHORS.rearFan} rotation={[0,Math.PI/2,0]} scale={.78} visual={visual}/>}
+    {mode==="exploded" && !isolate && <ExplodedGuides strength={strength} gpuAvailable={Boolean(gpu)}/>}
     {mode==="airflow" && !isolate && <Airflow/>}
-    <gridHelper args={[12,12,"#475569","#1e293b"]} position={[0,-2.26,0]}/>
+    <gridHelper args={[20,20,"#475569","#1e293b"]} position={[0,exploded ? -5.35 : -2.26,0]}/>
   </>;
 }
 
 export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { length: number; limit: number } }) {
   const [selected,setSelected]=useState<PartId>("gpu");
   const [mode,setMode]=useState<Mode>("assembled");
+  const [explosionStrength,setExplosionStrength]=useState(1);
   const [isolate,setIsolate]=useState(false);
   const [panel,setPanel]=useState(false);
   const [shroud,setShroud]=useState(true);
   const orbitRef = useRef<ComponentRef<typeof OrbitControls>>(null);
-  const cameraView = (position: Point3) => {
+  const cameraView = (position: Point3, target: Point3 = [0,0,0]) => {
     const orbit = orbitRef.current;
     if (!orbit) return;
     orbit.object.position.set(...position);
-    orbit.target.set(0,0,0);
+    orbit.target.set(...target);
     orbit.update();
+  };
+  const explodeCamera = (strength: number) =>
+    cameraView([10,6.2,17.4+(strength-1)*10],[0,-1.15,1.05]);
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    if (next==="exploded") explodeCamera(explosionStrength);
+    else cameraView([5.8,3.3,7.2]);
   };
   const length=clearance?.length??0;
   const limit=clearance?.limit??0;
@@ -246,16 +265,35 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     </div>
     <div className="flex flex-wrap gap-2">
       {(["assembled","exploded","xray","airflow"] as Mode[]).map(id=>
-        <button key={id} type="button" onClick={()=>setMode(id)} aria-pressed={mode===id}
+        <button key={id} type="button" onClick={()=>switchMode(id)} aria-pressed={mode===id}
           className={"rounded-lg border px-3 py-2 text-sm "+(mode===id?"border-cyan-400 bg-cyan-300/10 text-cyan-200":"border-slate-700 text-slate-300 hover:border-slate-500")}>
           {({assembled:"Montado",exploded:"Vista explodida",xray:"Raio-X",airflow:"Fluxo de ar"} as Record<Mode,string>)[id]}
         </button>)}
     </div>
+    <p className="text-sm text-sky-200" role="status">{modeDescription(mode,isolate)}</p>
+    {mode==="exploded" && <div className="flex flex-wrap items-center gap-3 text-sm">
+      <label htmlFor="explosion-strength" className="font-medium text-slate-200">Separação das peças</label>
+      <input id="explosion-strength" type="range" min="1" max="1.6" step="0.1" value={explosionStrength}
+        onChange={e=>{
+          const value=Number(e.target.value);
+          setExplosionStrength(value);
+          explodeCamera(value);
+        }}
+        className="accent-cyan-400 w-48" aria-valuetext={Math.round(explosionStrength*100)+"%"} />
+      <span className="text-cyan-200 tabular-nums">{Math.round(explosionStrength*100)}%</span>
+      <button type="button" onClick={()=>explodeCamera(explosionStrength)}
+        className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Enquadrar peças</button>
+    </div>}
+    {mode==="xray" && <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300">
+      <span className="rounded-md border border-cyan-800 px-2 py-1 text-cyan-200">Sólido: peça selecionada</span>
+      <span className="rounded-md border border-slate-700 px-2 py-1">Translúcido: outras peças</span>
+      <span className="rounded-md border border-slate-700 px-2 py-1">Linhas: gabinete</span>
+    </div>}
     <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#0d1629] h-[470px] md:h-[590px]">
       <Canvas shadows camera={{position:[5.8,3.3,7.2],fov:40}} dpr={[1,1.6]} gl={{antialias:true}}>
         <Suspense fallback={null}>
-          <Scene selected={selected} onPick={setSelected} mode={mode} isolate={isolate} panel={panel} shroud={shroud} gpu={gpu}/>
-          <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={17} maxPolarAngle={Math.PI*.90}/>
+          <Scene selected={selected} onPick={setSelected} mode={mode} isolate={isolate} panel={panel} shroud={shroud} gpu={gpu} strength={explosionStrength}/>
+          <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={40} maxPolarAngle={Math.PI*.90}/>
         </Suspense>
       </Canvas>
     </div>
@@ -273,8 +311,16 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     </div>
     <div className="flex flex-wrap gap-3 text-sm">
       <label className="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isolate} onChange={e=>setIsolate(e.target.checked)}/> Isolar peça selecionada</label>
-      <label className="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={panel} onChange={e=>setPanel(e.target.checked)}/> Painel lateral</label>
-      <label className="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={shroud} onChange={e=>setShroud(e.target.checked)}/> Cobertura da fonte</label>
+      <label className={"inline-flex items-center gap-2 "+(mode==="xray"||mode==="exploded"?"opacity-45 cursor-not-allowed":"cursor-pointer")}
+        title="Este controle só altera a visualização Montado ou Fluxo de ar">
+        <input type="checkbox" checked={panel} disabled={mode==="xray"||mode==="exploded"}
+          onChange={e=>setPanel(e.target.checked)}/> Painel lateral
+      </label>
+      <label className={"inline-flex items-center gap-2 "+(mode==="xray"||mode==="exploded"?"opacity-45 cursor-not-allowed":"cursor-pointer")}
+        title="Este controle só altera a visualização Montado ou Fluxo de ar">
+        <input type="checkbox" checked={shroud} disabled={mode==="xray"||mode==="exploded"}
+          onChange={e=>setShroud(e.target.checked)}/> Cobertura da fonte
+      </label>
     </div>
     <div className="grid gap-4 md:grid-cols-2">
       <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
@@ -290,7 +336,6 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
         <p className="text-xs text-amber-200 mt-2">A geometria é genérica e não prova compatibilidade física, elétrica ou térmica. Consulte medidas oficiais.</p>
       </div>
     </div>
-    <p className="text-sm text-cyan-200" role="status">{modeDescription(mode,isolate)}</p>
     <p className="text-xs text-slate-400">Mouse: arrastar para girar • roda para zoom • clicar nas peças para inspecionar. Ventoinhas da GPU voltadas para baixo; fonte no compartimento inferior.</p>
   </section>;
 }
