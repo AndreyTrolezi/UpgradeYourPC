@@ -31,9 +31,6 @@ function BoxPart({ id, position, size, color, selected, isolate, xray, onPick, o
     {selected === id && outline && <Edges color="#67e8f9" threshold={18}/>}
   </mesh>;
 }
-function PartBox({ id, position, size, color, opacity, metallic, outline, ...visual }: Omit<BoxProps, "selected" | "isolate" | "xray" | "onPick"> & { visual: VisualProps }) {
-  return <BoxPart {...visual} id={id} position={position} size={size} color={color} opacity={opacity} metallic={metallic} outline={outline}/>;
-}
 function Fan({ id, position, rotation = [0,0,0], scale = 1, visual }: {
   id: PartId; position: Point3; rotation?: Point3; scale?: number; visual: VisualProps;
 }) {
