@@ -30,7 +30,7 @@ export function presentPart(
 
 export function canDisplayPanel(mode: VisualMode, isolate: boolean, selected: VisualPart, enabled: boolean) {
   // X-ray replaces the panel with a transparent structural outline.
-  return enabled && mode !== "xray" && (!isolate || selected === "case");
+  return enabled && mode !== "xray" && mode !== "exploded" && (!isolate || selected === "case");
 }
 
 export function modeDescription(mode: VisualMode, isolate: boolean): string {
