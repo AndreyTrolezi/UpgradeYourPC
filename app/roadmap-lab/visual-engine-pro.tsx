@@ -2,7 +2,7 @@
 
 import { Canvas, ThreeEvent } from "@react-three/fiber";
 import { Edges, Line, OrbitControls } from "@react-three/drei";
-import { Suspense, useState } from "react";
+import { Suspense, useRef, useState, type ComponentRef } from "react";
 import { ANCHORS, EXPLODED, SHOWCASE, placed, type Point3 } from "@/app/roadmap-lab/scene-layout";
 import type { Part } from "@/app/lib/types";
 import { canDisplayPanel, modeDescription, presentPart, type VisualMode } from "@/app/roadmap-lab/visual-mode-rules";
@@ -223,6 +223,14 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
   const [isolate,setIsolate]=useState(false);
   const [panel,setPanel]=useState(false);
   const [shroud,setShroud]=useState(true);
+  const orbitRef = useRef<ComponentRef<typeof OrbitControls>>(null);
+  const cameraView = (position: Point3) => {
+    const orbit = orbitRef.current;
+    if (!orbit) return;
+    orbit.object.position.set(...position);
+    orbit.target.set(0,0,0);
+    orbit.update();
+  };
   const length=clearance?.length??0;
   const limit=clearance?.limit??0;
   const status=!gpu ? "Nenhuma placa de vídeo selecionada." :
@@ -247,9 +255,16 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
       <Canvas shadows camera={{position:[5.8,3.3,7.2],fov:40}} dpr={[1,1.6]} gl={{antialias:true}}>
         <Suspense fallback={null}>
           <Scene selected={selected} onPick={setSelected} mode={mode} isolate={isolate} panel={panel} shroud={shroud} gpu={gpu}/>
-          <OrbitControls makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={17} maxPolarAngle={Math.PI*.90}/>
+          <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={17} maxPolarAngle={Math.PI*.90}/>
         </Suspense>
       </Canvas>
+    </div>
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      <span className="text-slate-400 mr-1">Câmera:</span>
+      <button type="button" onClick={()=>cameraView([5.8,3.3,7.2])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Isométrica</button>
+      <button type="button" onClick={()=>cameraView([1.2,1.6,8])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Lateral aberta</button>
+      <button type="button" onClick={()=>cameraView([7.5,1.4,3.3])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Frontal</button>
+      <button type="button" onClick={()=>cameraView([2.2,-3.8,6.2])} className="rounded-md border border-slate-700 px-3 py-1.5 hover:border-cyan-400">Parte inferior</button>
     </div>
     <div className="flex flex-wrap gap-2">
       {(["case","motherboard","gpu","cooler","ram","psu"] as PartId[]).map(id=>
