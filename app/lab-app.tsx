@@ -32,14 +32,16 @@ import {
   BookOpen, Boxes, Check, ChevronRight, CircleAlert, CircleCheck, CircleHelp, CircleX,
   Copy, Cpu, Database, Download, FileJson, FileSpreadsheet, FileText, Gauge, HardDrive,
   LayoutDashboard, LockKeyhole, MemoryStick, MessageCircle, Monitor, PackagePlus, PackageSearch,
-  PanelTop, Plug, Plus, Power, Printer, Puzzle, RotateCcw, Save, Search, Settings2, ShieldAlert,
+  PanelTop, Plug, Plus, Power, Printer, Puzzle, RotateCcw, Save, Search, Settings2, FlaskConical, ShieldAlert,
   ShieldCheck, Sparkles, SquareStack, Thermometer, Trash2, Wrench, X,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-export type ViewId = "assistant" | "overview" | "my-pc" | "builder" | "compare" | "catalog" | "prices" | "glossary" | "extensions";
+export type ViewId = "assistant" | "overview" | "my-pc" | "visual-lab" | "builder" | "compare" | "catalog" | "prices" | "glossary" | "extensions";
+
+const RoadmapLab = lazy(() => import("@/app/roadmap-lab/workbench").then(mod => ({default: mod.RoadmapLab})));
 
 const categoryIcons: Record<PartCategory, LucideIcon> = {
   cpu: Cpu, motherboard: PanelTop, gpu: Gauge, memory: MemoryStick, storage: HardDrive,
@@ -50,6 +52,7 @@ const navItems: Array<{ id: ViewId; label: string; icon: LucideIcon; hint: strin
   { id: "assistant", label: "Consultor", icon: Sparkles, hint: "Montar por descrição" },
   { id: "overview", label: "Visão geral", icon: LayoutDashboard, hint: "Resumo do laboratório" },
   { id: "my-pc", label: "Meu PC", icon: Cpu, hint: "Configuração atual" },
+  { id: "visual-lab", label: "Montagem 3D", icon: FlaskConical, hint: "Laboratório 3D e tutorial experimental" },
   { id: "builder", label: "Montador", icon: Wrench, hint: "Criar e validar" },
   { id: "compare", label: "Comparar", icon: SquareStack, hint: "Todas as peças" },
   { id: "catalog", label: "Catálogo", icon: PackageSearch, hint: "Peças e fichas" },
@@ -107,6 +110,7 @@ function buildCsv(build: BuildConfig, parts: Part[]) {
 
 export function LabApp({ user, initialView = "my-pc", initialSimulation, initialImport = false }: { user: { displayName: string; email: string }; initialView?: ViewId; initialSimulation?: { partId: string; slot: number }; initialImport?: boolean }) {
   const [view, setView] = useState<ViewId>(initialView);
+  const [visualLabBuildSource, setVisualLabBuildSource] = useState<"current" | "draft">("current");
   const [profile, setProfile] = useState<UserProfile>(() => makeDefaultProfile(user.displayName));
   const [savedBuilds, setSavedBuilds] = useState<SavedBuild[]>([]);
   const [extensions, setExtensions] = useState<StoredExtension[]>(() => builtInExtensions.map((manifest) => ({ pluginId: manifest.id, manifest, enabled: true, installedAt: new Date(0).toISOString() })));
@@ -254,6 +258,7 @@ export function LabApp({ user, initialView = "my-pc", initialSimulation, initial
     assistant: { title: "Consultor de montagem", subtitle: "Descreva o uso e transforme o orçamento em uma configuração editável." },
     overview: { title: "Seu laboratório de hardware", subtitle: "Decisões de upgrade com contexto, compatibilidade e impacto prático." },
     "my-pc": { title: "Meu PC", subtitle: "Suas peças, suas escolhas e a evolução do seu computador." },
+    "visual-lab": { title: "Montagem 3D", subtitle: "Inspecione seu PC e siga o tutorial de montagem sem alterar configurações salvas." },
     builder: { title: "Montador universal", subtitle: "Combine AMD, Intel e todas as categorias; o diagnóstico muda em tempo real." },
     compare: { title: "Comparador de peças", subtitle: "Compare lado a lado qualquer categoria do computador." },
     catalog: { title: "Catálogo técnico", subtitle: "Consulte peças, construção, especificações e cadastre modelos próprios." },
@@ -280,7 +285,7 @@ export function LabApp({ user, initialView = "my-pc", initialSimulation, initial
           <SidebarContent className="px-2">
             <SidebarGroup><SidebarGroupContent><SidebarMenu><SidebarMenuItem><SidebarMenuButton asChild tooltip="Explorar peças"><a href="/" className="h-11 text-cyan-200"><PackageSearch /><span>Explorar peças <span className="ml-1 text-xs text-slate-500">↗</span></span></a></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroupContent></SidebarGroup>
             {[
-              { label: "Meu espaço", ids: ["my-pc", "builder", "overview"] },
+              { label: "Meu espaço", ids: ["my-pc", "builder", "visual-lab", "overview"] },
               { label: "Ferramentas", ids: ["catalog", "compare", "glossary"] },
               { label: "Outros recursos", ids: ["assistant", "prices", "extensions"] },
             ].map(group => <SidebarGroup key={group.label}>
@@ -321,6 +326,28 @@ export function LabApp({ user, initialView = "my-pc", initialSimulation, initial
             {view === "assistant" && <SmartView onApply={(build) => { changeProfile((current) => ({ ...current, draftBuild: clone(build) })); setView("builder"); toast.success("Sugestão carregada. Revise e salve na sua conta."); }} />}
             {view === "overview" && <Overview profile={profile} parts={allParts} onOpen={setView} onPlatform={applyPlatform} />}
             {view === "my-pc" && <MyPcView initialSimulation={initialSimulation} initialImport={initialImport} customParts={profile.customParts} onImport={(build, customParts) => { changeProfile(current => ({ ...current, currentBuild: build, customParts })); toast.success("Importação aplicada à edição. Salve para guardar na conta."); }} build={profile.currentBuild} parts={allParts} history={history} savedAt={savedAt} dirty={dirty} onChange={build => changeProfile(current => ({ ...current, currentBuild: build }))} onTerm={setTermId} onExport={() => openExport("current")} onCustom={(category, index) => { setCustomTarget({ category, index }); setCustomPartOpen(true); }} onContinue={build => { changeProfile(current => ({ ...current, draftBuild: build })); setView("builder"); toast.info("Simulação carregada no montador. Salve para guardar."); }} />}
+            {view === "visual-lab" && <div className="space-y-5">
+              <div className="flex flex-wrap items-center gap-4 rounded-xl border border-cyan-300/20 bg-cyan-300/5 px-4 py-3 text-sm">
+                <div className="flex-1">
+                  <p className="font-semibold text-cyan-100">Laboratório integrado ao seu perfil</p>
+                  <p className="text-slate-400">Escolha qual configuração visualizar. Tudo neste laboratório é simulação e não altera suas peças salvas.</p>
+                </div>
+                <label className="flex items-center gap-2" htmlFor="visual-lab-source">
+                  <span className="text-slate-300">Configuração:</span>
+                  <select id="visual-lab-source" value={visualLabBuildSource}
+                    onChange={event=>setVisualLabBuildSource(event.target.value==="draft"?"draft":"current")}
+                    className="rounded-md border border-white/15 bg-[#0c1320] px-3 py-2 text-slate-100">
+                    <option value="current">Meu PC</option>
+                    <option value="draft">Montador</option>
+                  </select>
+                </label>
+              </div>
+              <Suspense fallback={<div className="lab-panel p-8 text-sm text-slate-400" role="status">Carregando laboratório 3D...</div>}>
+                <RoadmapLab key={visualLabBuildSource} embedded
+                  sourceBuild={visualLabBuildSource==="current"?profile.currentBuild:profile.draftBuild}
+                  availableParts={allParts}/>
+              </Suspense>
+            </div>}
             {view === "builder" && <BuilderView build={profile.draftBuild} parts={allParts} savedBuilds={savedBuilds} onPart={(category, index, id) => setBuildPart("draftBuild", category, index, id)} onAdd={(category) => addBuildSlot("draftBuild", category)} onChange={(build) => changeProfile((current) => ({ ...current, draftBuild: build }))} onSave={saveBuildSnapshot} onLoad={(build) => { changeProfile((current) => ({ ...current, draftBuild: clone(build) })); toast.success("Configuração carregada no montador."); }} onDelete={deleteSavedBuild} onTerm={setTermId} onExport={() => openExport("draft")} />}
             {view === "compare" && <CompareView parts={allParts} onTerm={setTermId} onUse={(part) => { setBuildPart("draftBuild", part.category, 0, part.id); setView("builder"); }} />}
             {view === "catalog" && <CatalogView parts={allParts} onAddCustom={() => { setCustomTarget(null); setCustomPartOpen(true); }} onUse={(part) => { setBuildPart("draftBuild", part.category, 0, part.id); setView("builder"); toast.success(`${part.name} foi para o montador.`); }} onTerm={setTermId} />}
