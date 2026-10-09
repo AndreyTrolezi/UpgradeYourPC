@@ -161,8 +161,8 @@ function PSU({ visual, exploded }: { visual: VisualProps; exploded: boolean }) {
 function FlowArrow({ position, direction, color }: { position: Point3; direction: "left" | "up"; color: string }) {
   const rotation: Point3 = direction === "left" ? [0,0,Math.PI/2] : [0,0,0];
   return <group position={position} rotation={rotation}>
-    <mesh position={[0,-.12,0]}><cylinderGeometry args={[.028,.028,.45,8]}/><meshBasicMaterial color={color} transparent opacity={.9}/></mesh>
-    <mesh position={[0,.17,0]}><coneGeometry args={[.095,.23,12]}/><meshBasicMaterial color={color}/></mesh>
+    <mesh position={[0,-.12,0]}><cylinderGeometry args={[.028,.028,.45,8]}/><meshBasicMaterial color={color} transparent opacity={.92} depthTest={false} depthWrite={false}/></mesh>
+    <mesh position={[0,.17,0]}><coneGeometry args={[.095,.23,12]}/><meshBasicMaterial color={color} transparent opacity={.92} depthTest={false} depthWrite={false}/></mesh>
   </group>;
 }
 function Airflow() {
@@ -271,7 +271,7 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
       <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Verificação dimensional</p>
         <p className="text-sm mt-2">{status}</p>
-        {mode==="airflow" && <p className="text-xs text-slate-400 mt-2">Azul: entrada frontal. Laranja: saída traseira e superior. É um esquema de fluxo, não uma simulação CFD.</p>}
+        {mode==="airflow" && <p className="text-xs text-slate-400 mt-2"><span className="text-sky-300 font-semibold">Azul: entrada frontal.</span> <span className="text-orange-300 font-semibold">Laranja: saída traseira e superior.</span> Esquema ilustrativo, sem simulação de temperatura ou pressão.</p>}
         <p className="text-xs text-amber-200 mt-2">A geometria é genérica e não prova compatibilidade física, elétrica ou térmica. Consulte medidas oficiais.</p>
       </div>
     </div>
