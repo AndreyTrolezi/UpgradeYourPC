@@ -23,7 +23,7 @@ export function AssemblyGuideControls({
   const verifiedCount = steps.filter(item=>checked.has(item.id)).length;
   const completed = checked.has(current.id);
 
-  return <section className="rounded-xl border border-cyan-900 bg-cyan-950/20 p-4 md:p-5 space-y-4" aria-label="Montagem guiada">
+  return <section className="rounded-xl border border-cyan-900 bg-cyan-950/20 p-4 md:p-5 space-y-4 lg:max-h-[590px] lg:overflow-y-auto" aria-label="Montagem guiada">
     <div className="flex flex-wrap items-center justify-between gap-2">
       <div className="flex items-center gap-2 text-cyan-200 font-semibold"><ShieldCheck size={18}/> Tutorial interativo de montagem</div>
       <button type="button" onClick={onClose}
