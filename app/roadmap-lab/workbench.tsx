@@ -5,22 +5,40 @@ import { catalog, defaultCurrentBuild } from "@/app/data/catalog";
 import { analyzeBuild } from "@/app/lib/compatibility";
 import { answerUpgradeQuestion } from "@/app/lib/upgrade-assistant";
 import { gpuInstallationManual } from "@/app/lib/assembly-manual";
+import type { BuildConfig, Part } from "@/app/lib/types";
+import { simulateLabGpu } from "@/app/lib/visual-lab";
 const VisualEnginePro = lazy(() => import("@/app/roadmap-lab/visual-engine-pro").then(m => ({ default: m.VisualEnginePro })));
 
-export function RoadmapLab() {
+export function RoadmapLab({ sourceBuild = defaultCurrentBuild, availableParts = catalog, embedded = false }: {
+  sourceBuild?: BuildConfig;
+  availableParts?: Part[];
+  embedded?: boolean;
+}) {
   const [question, setQuestion] = useState("Minha configuração é compatível?");
-  const [selectedGpu, setSelectedGpu] = useState(defaultCurrentBuild.parts.gpu?.[0] ?? "");
-  const build = useMemo(() => ({ ...defaultCurrentBuild, parts: { ...defaultCurrentBuild.parts, gpu: selectedGpu ? [selectedGpu] : [] } }), [selectedGpu]);
-  const answer = useMemo(() => answerUpgradeQuestion(question, build), [question, build]);
-  const compatibility = useMemo(() => analyzeBuild(build), [build]);
-  const gpu = catalog.find(p => p.id === selectedGpu && p.category === "gpu");
+  const [selectedGpu, setSelectedGpu] = useState(sourceBuild.parts.gpu?.[0] ?? "");
+  // A sandbox simulation: selecting a GPU must never edit the user's saved PC.
+  const build = useMemo<BuildConfig>(
+    () => simulateLabGpu(sourceBuild, selectedGpu || null),
+    [sourceBuild, selectedGpu],
+  );
+  const answer = useMemo(() => answerUpgradeQuestion(question, build, availableParts), [question, build, availableParts]);
+  const compatibility = useMemo(() => analyzeBuild(build, availableParts), [build, availableParts]);
+  const gpu = availableParts.find(p => p.id === selectedGpu && p.category === "gpu");
+  const chassis = availableParts.find(p => p.id === build.parts.case?.[0] && p.category === "case");
+  const gpuLength = typeof gpu?.specs.length === "number" && gpu.specs.length > 0 ? gpu.specs.length : 0;
+  const maxLength = typeof chassis?.specs.gpuLength === "number" && chassis.specs.gpuLength > 0 ? chassis.specs.gpuLength : 0;
   const steps = gpuInstallationManual(gpu);
-  return <main className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10">
-    <div className="mx-auto max-w-5xl space-y-8">
-      <div><Link href="/meu-pc" className="text-cyan-300 text-sm">← Voltar ao Meu PC</Link><h1 className="text-3xl font-bold mt-3">Laboratório de upgrades</h1><p className="text-slate-400 mt-2">Protótipo local e experimental. Não utiliza IA externa nem consulta preços ao vivo.</p></div>
-      <section className="rounded-2xl border border-slate-700 p-5 space-y-4"><h2 className="text-xl font-semibold">1. Compatibilidade</h2><label className="block text-sm" htmlFor="gpu">Simular placa de vídeo</label><select id="gpu" className="w-full rounded-lg bg-slate-900 border border-slate-600 p-3" value={selectedGpu} onChange={e => setSelectedGpu(e.target.value)}><option value="">Sem GPU</option>{catalog.filter(p => p.category === "gpu").map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><p className="text-sm text-slate-400">Dados do PC de exemplo. Medidas e conectores desconhecidos exigem conferência no fabricante.</p><div className="space-y-2">{compatibility.checks.map(c => <div key={c.id} className="rounded-lg border border-slate-800 p-3"><span className={c.severity === "error" ? "text-red-300" : c.severity === "warning" ? "text-amber-300" : c.severity === "ok" ? "text-emerald-300" : "text-slate-300"}>{c.severity.toUpperCase()}</span><strong className="ml-2">{c.title}</strong><p className="text-sm text-slate-400">{c.detail}</p></div>)}</div></section>
+  return <main className={embedded ? "text-slate-100" : "min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10"}>
+    <div className={"space-y-8 "+(embedded ? "" : "mx-auto max-w-5xl")}>
+      <div>
+        {!embedded && <Link href="/meu-pc" className="text-cyan-300 text-sm">← Voltar ao Meu PC</Link>}
+        <h1 className="text-2xl font-bold mt-3">{embedded ? "Laboratório 3D · "+sourceBuild.name : "Laboratório de upgrades"}</h1>
+        <p className="text-slate-400 mt-2">Experimente visualizações, tutoriais e trocas de GPU sem alterar sua configuração salva. O 3D é ilustrativo e não consulta preços ao vivo.</p>
+        {embedded && <p className="mt-2 text-xs text-cyan-200">Visualizando {sourceBuild.name}. Alterações nesta tela são apenas simulações e não são salvas automaticamente.</p>}
+      </div>
+      <section className="rounded-2xl border border-slate-700 p-5 space-y-4"><h2 className="text-xl font-semibold">1. Compatibilidade</h2><label className="block text-sm" htmlFor="gpu">Simular placa de vídeo</label><select id="gpu" className="w-full rounded-lg bg-slate-900 border border-slate-600 p-3" value={selectedGpu} onChange={e => setSelectedGpu(e.target.value)}><option value="">Sem GPU</option>{availableParts.filter(p => p.category === "gpu").map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><p className="text-sm text-slate-400">Configuração: {sourceBuild.name}. O motor confere dados cadastrados; BIOS, dimensões internas e conectores desconhecidos exigem conferência no fabricante.</p><div className="space-y-2">{compatibility.checks.map(c => <div key={c.id} className="rounded-lg border border-slate-800 p-3"><span className={c.severity === "error" ? "text-red-300" : c.severity === "warning" ? "text-amber-300" : c.severity === "ok" ? "text-emerald-300" : "text-slate-300"}>{c.severity.toUpperCase()}</span><strong className="ml-2">{c.title}</strong><p className="text-sm text-slate-400">{c.detail}</p></div>)}</div></section>
       <section className="rounded-2xl border border-slate-700 p-5 space-y-4"><h2 className="text-xl font-semibold">2. Assistente de upgrades — versão local</h2><label htmlFor="question" className="block text-sm">Pergunta</label><input id="question" value={question} onChange={e => setQuestion(e.target.value)} className="w-full rounded-lg bg-slate-900 border border-slate-600 p-3"/><p>{answer.text}</p>{answer.checks.length > 0 && <ul className="list-disc pl-5 text-amber-200 text-sm">{answer.checks.map((c,i) => <li key={i}>{c}</li>)}</ul>}</section>
-      <Suspense fallback={<div className="rounded-xl border border-slate-700 p-8 text-slate-300">Carregando Visual Engine 3D...</div>}><VisualEnginePro gpu={gpu} clearance={{ length: typeof gpu?.specs.length === "number" ? gpu.specs.length : 0, limit: (() => { const c = catalog.find(p => p.id === build.parts.case?.[0]); return typeof c?.specs.gpuLength === "number" ? c.specs.gpuLength : 0; })() }} /></Suspense>
+      <Suspense fallback={<div className="rounded-xl border border-slate-700 p-8 text-slate-300">Carregando Visual Engine 3D...</div>}><VisualEnginePro gpu={gpu} clearance={{ length: gpuLength, limit: maxLength }} /></Suspense>
       <details className="rounded-2xl border border-slate-700 p-5 group">
         <summary className="cursor-pointer font-semibold text-lg text-slate-200">
           Manual complementar: instalação de GPU (somente texto)

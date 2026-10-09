@@ -32,7 +32,11 @@ const check = (result, id) => {
   return found;
 };
 let result = analyzeBuild(base, parts);
-for (const id of ["socket", "memory-type", "form-factor", "gpu-length", "cooler-height", "cooler-socket", "cooling", "psu-power"]) assert.equal(check(result, id).severity, "ok", id);
+for (const id of ["socket", "memory-type", "form-factor", "gpu-length", "cooler-height", "cooler-socket", "cooling"]) assert.equal(check(result, id).severity, "ok", id);
+assert.equal(check(result, "psu-power").severity, "info", "Oversized PSU returns an informational headroom note, not an error");
+result = analyzeBuild(base, parts.map(p => p.id === "psu" ? { ...p, specs: { ...p.specs, wattage: 550 } } : p));
+assert.equal(check(result, "psu-power").severity, "ok", "Balanced PSU margin should be considered adequate");
+result = analyzeBuild(base, parts);
 const without = (id, key) => parts.map(p => p.id === id ? { ...p, specs: Object.fromEntries(Object.entries(p.specs).filter(([k]) => k !== key)) } : p);
 for (const [id, key, checkId] of [["gpu", "length", "gpu-length"], ["case", "gpuLength", "gpu-length"], ["cooler", "height", "cooler-height"], ["case", "coolerHeight", "cooler-height"], ["psu", "wattage", "psu-power"], ["cooler", "tdpCapacity", "cooling"], ["cpu", "socket", "socket"], ["board", "memoryType", "memory-type"], ["case", "formFactors", "form-factor"]]) {
   result = analyzeBuild(base, without(id, key));

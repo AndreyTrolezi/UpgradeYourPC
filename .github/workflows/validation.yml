@@ -1,0 +1,38 @@
+name: UpgradeYourPC validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      # Dependencies were introduced on experimental branches; the GitHub lockfile
+      # must be synchronized before we enforce --frozen-lockfile at release time.
+      - name: Install dependencies for experimental validation
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run regression suites
+        run: pnpm test:roadmap
+
+      - name: Compile production bundle
+        run: pnpm build
