@@ -12,15 +12,14 @@ function Solid({position,size,color,id,selected,onPick,metalness=.3,transparent=
     {selected===id&&<Edges color="#67e8f9" threshold={15}/>}
   </mesh>;
 }
-function Fan({position,id,selected,onPick,scale=1}:{position:[number,number,number];id:Id;selected:Id;onPick:(id:Id)=>void;scale?:number}) {
-  return <group position={position} scale={scale} onClick={(e)=>{e.stopPropagation();onPick(id);}}>
-    <mesh rotation={[Math.PI/2,0,0]}><torusGeometry args={[.32,.055,10,32]}/><meshStandardMaterial color={selected===id?"#67e8f9":"#64748b"} metalness={.7}/></mesh>
+function Fan({position,id,selected,onPick,scale=1,rotation=[0,0,0]}:{position:[number,number,number];id:Id;selected:Id;onPick:(id:Id)=>void;scale?:number;rotation?:[number,number,number]}) {
+  return <group position={position} rotation={rotation} scale={scale} onClick={(e)=>{e.stopPropagation();onPick(id);}}>
+    <mesh><torusGeometry args={[.32,.055,10,32]}/><meshStandardMaterial color={selected===id?"#67e8f9":"#64748b"} metalness={.7}/></mesh>
     <mesh rotation={[Math.PI/2,0,0]}><cylinderGeometry args={[.10,.10,.06,20]}/><meshStandardMaterial color="#111827"/></mesh>
-    {[0,1,2,3,4,5,6].map(i=><mesh key={i} rotation={[Math.PI/2,0,i*Math.PI*2/7]} position={[Math.cos(i*Math.PI*2/7)*.17,0,Math.sin(i*Math.PI*2/7)*.17]}><boxGeometry args={[.24,.04,.10]}/><meshStandardMaterial color="#94a3b8" metalness={.45}/></mesh>)}
+    {[0,1,2,3,4,5,6].map(i=><mesh key={i} rotation={[0,0,i*Math.PI*2/7]} position={[Math.cos(i*Math.PI*2/7)*.17,Math.sin(i*Math.PI*2/7)*.17,0]}><boxGeometry args={[.24,.04,.10]}/><meshStandardMaterial color="#94a3b8" metalness={.45}/></mesh>)}
   </group>;
 }
 function Scene({selected,onPick,exploded,panel,gpu}:{selected:Id;onPick:(id:Id)=>void;exploded:boolean;panel:boolean;gpu?:Part}) {
-  const offset=exploded?1:0;
   const part=(id:Id,position:[number,number,number],size:[number,number,number],color:string,metalness?:number)=> <Solid id={id} selected={selected} onPick={onPick} position={position} size={size} color={color} metalness={metalness}/>;
   return <group>
     <ambientLight intensity={1.1}/><directionalLight position={[5,8,7]} intensity={2.6}/><pointLight position={[-3,2,4]} intensity={40} distance={10} color="#67e8f9"/>
@@ -50,16 +49,16 @@ function Scene({selected,onPick,exploded,panel,gpu}:{selected:Id;onPick:(id:Id)=
       </group>)}
     </group>
     {gpu&&<group position={exploded?[.4,-.3,1.5]:[0,0,0]}>
-      {part("gpu",[.05,-.8,.18],[2.65,.23,.76],"#1e293b",.7)}
-      {part("gpu",[.05,-.65,.18],[2.5,.06,.67],"#334155",.7)}
-      {[-.67,.75].map(x=><Fan key={x} position={[x,-.55,.22]} id="gpu" selected={selected} onPick={onPick} scale={.72}/>)}
-      {part("gpu",[-1.28,-.72,.19],[.08,.48,.82],"#94a3b8",.9)}
+      {part("gpu",[-.25,-.82,.10],[2.35,.18,.72],"#1e293b",.7)}
+      {part("gpu",[-.25,-.69,.10],[2.24,.07,.67],"#334155",.7)}
+      {[-.85,.32].map(x=><Fan key={x} position={[x,-.62,.10]} rotation={[-Math.PI/2,0,0]} id="gpu" selected={selected} onPick={onPick} scale={.68}/>)}
+      {part("gpu",[-1.46,-.80,.10],[.08,.42,.82],"#94a3b8",.9)}
     </group>}
     <group position={exploded?[.6,-.7,1.4]:[0,0,0]}>
-      {part("psu",[.91,-1.49,-.29],[1.38,.75,1.10],"#334155",.8)}
-      <Fan position={[.91,-1.05,-.29]} id="psu" selected={selected} onPick={onPick} scale={.65}/>
+      {part("psu",[-.95,-1.49,-.29],[1.38,.75,1.10],"#334155",.8)}
+      <Fan position={[-.95,-1.05,-.29]} rotation={[-Math.PI/2,0,0]} id="psu" selected={selected} onPick={onPick} scale={.65}/>
     </group>
-    <group position={[1.48,.45,-.63]}>{[1.15,.32,-.51].map(y=><Fan key={y} position={[0,y,0]} id="case" selected={selected} onPick={onPick} scale={.8}/>)}</group>
+    <group position={[1.48,.45,-.63]}>{[1.15,.32,-.51].map(y=><Fan key={y} position={[0,y,0]} rotation={[0,Math.PI/2,0]} id="case" selected={selected} onPick={onPick} scale={.8}/>)}</group>
     <gridHelper args={[12,12,"#334155","#1e293b"]} position={[0,-2.2,0]}/>
   </group>;
 }
