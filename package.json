@@ -38,7 +38,10 @@
     "sonner": "^2.0.8",
     "tailwind-merge": "3.6.0",
     "vaul": "^1.1.2",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "@react-three/fiber": "^9.3.0",
+    "@react-three/drei": "^10.7.0",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "1.37.1",
@@ -58,7 +61,8 @@
     "typescript": "5.9.3",
     "vinext": "1.0.0-beta.5",
     "vite": "8.0.13",
-    "wrangler": "4.92.0"
+    "wrangler": "4.92.0",
+    "@types/three": "^0.180.0"
   },
   "type": "module",
   "packageManager": "pnpm@11.19.0"
