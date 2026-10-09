@@ -17,6 +17,7 @@ O objeto `ANCHORS` define posições instaladas. O objeto `EXPLODED` fornece des
 git fetch origin
 git switch feat/visual-engine-structural-v2
 node scripts/check-visual-engine.mjs
+node scripts/check-visual-inspection.mjs
 pnpm.cmd build
 pnpm.cmd dev
 ```
@@ -26,12 +27,13 @@ Acesse `http://localhost:5173/roadmap-lab`.
 ## Testes de aceitação visual
 1. **Montado:** placa-mãe na bandeja, cooler no socket, RAM nos slots e GPU horizontal acoplada ao PCIe, com fans para baixo.
 2. **Fonte:** fica no compartimento inferior; desative "Cobertura da fonte" para inspecioná-la.
-3. **Ventoinhas:** três intake frontais e uma traseira; veja os fluxos esquemáticos no modo "Fluxo de ar".
-4. **Explodido:** os componentes devem se separar, sem alterar suas coordenadas originais ao voltar a "Montado".
-5. **Raio-X:** permite inspecionar peças através da carcaça.
+3. **Ventoinhas:** três intake frontais e uma traseira; veja os fluxos esquemáticos no modo "Fluxo de ar". Setas azuis devem continuar visíveis como representação de entrada, e laranjas indicam exaustão.
+4. **Explodido:** os componentes devem se separar, com guias pontilhadas indicando âncoras, sem alterar suas coordenadas originais ao voltar a "Montado".
+5. **Raio-X:** apenas o gabinete fica muito translúcido; as peças internas continuam opacas. A carcaça não deve impedir cliques no hardware.
 6. **Seleção:** clicar na peça ou no botão destaca e atualiza a ficha informativa.
-7. **Painel lateral e isolamento:** testar os dois controles e rotação/zoom.
+7. **Painel lateral e isolamento:** a opção de painel deve mostrar vidro visível no modo normal, sem capturar cliques das peças atrás. Em Raio-X o vidro deve ser omitido. Com isolamento ativo, os demais componentes (incluindo fans e estrutura) devem desaparecer, sem sobras translúcidas.
 8. **Sem GPU:** escolher a opção vazia no catálogo deve omitir o modelo da placa de vídeo.
+9. **Câmera:** conferir os presets Isométrica, Lateral aberta, Frontal e Parte inferior, além dos controles orbitais de rotação e zoom.
 
 ## Limites conhecidos
 - Dimensões do catálogo são mostradas no diagnóstico de compatibilidade, mas **não são usadas como geometria exata**.
