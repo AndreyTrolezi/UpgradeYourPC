@@ -290,6 +290,13 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
   const guideSteps=useMemo(()=>assemblyGuideSteps(hasGpu),[hasGpu]);
   const currentGuideIndex=Math.min(guideIndex,guideSteps.length-1);
   const activeGuideStep=guideActive ? guideSteps[currentGuideIndex] : null;
+  // If the GPU is removed from the catalog selector while guiding, reconcile
+  // the focused part with the reduced, GPU-free step sequence.
+  useEffect(()=>{
+    if(guideActive && activeGuideStep && selected!==activeGuideStep.focus) {
+      setSelected(activeGuideStep.focus);
+    }
+  },[guideActive,activeGuideStep?.id,hasGpu,selected]);
   const orbitRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const cameraView = (position: Point3, target: Point3 = [0,0,0]) => {
     const orbit = orbitRef.current;
