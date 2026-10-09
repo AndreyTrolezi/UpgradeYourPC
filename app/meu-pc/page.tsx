@@ -3,7 +3,7 @@ import { LabApp, type ViewId } from "@/app/lab-app";
 import { catalog } from "@/app/data/catalog";
 
 export const dynamic = "force-dynamic";
-const views: ViewId[] = ["my-pc", "builder", "overview", "catalog", "compare", "glossary", "assistant", "prices", "extensions"];
+const views: ViewId[] = ["my-pc", "builder", "visual-lab", "overview", "catalog", "compare", "glossary", "assistant", "prices", "extensions"];
 
 type Params = { view?: string; simulate?: string; slot?: string; import?: string };
 export default function MyPcPage({ searchParams }: { searchParams: Promise<Params> }) {
