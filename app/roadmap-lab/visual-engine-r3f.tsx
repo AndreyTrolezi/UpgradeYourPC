@@ -4,6 +4,7 @@ import { OrbitControls, Edges } from "@react-three/drei";
 import { Suspense, useState } from "react";
 import type { Part } from "@/app/lib/types";
 import { mount } from "@/app/roadmap-lab/mount-anchors";
+const assemblyOffset = (exploded: boolean, offset: [number,number,number]): [number,number,number] => exploded ? offset : [0,0,0];
 
 type Id = "case" | "motherboard" | "gpu" | "cooler" | "ram" | "psu";
 const names: Record<Id,string>={case:"Gabinete",motherboard:"Placa-mãe",gpu:"Placa de vídeo",cooler:"Cooler",ram:"Memória RAM",psu:"Fonte"};
@@ -32,7 +33,7 @@ function Scene({selected,onPick,exploded,panel,gpu}:{selected:Id;onPick:(id:Id)=
     {part("case",[0,-1.03,-.10],[3.28,.10,1.64],"#1e293b",.8)}
     {part("case",[-1.57,-.77,.10],[.10,.62,1.64],"#64748b",.8)}
     {panel&&<Solid id="case" selected={selected} onPick={onPick} position={[0,0,.99]} size={[3.5,4.1,.06]} color="#64748b" transparent opacity={.16}/>}
-    <group position={exploded?[-.5,.3,.7]:[0,0,0]}>
+    <group position={assemblyOffset(exploded,[-.5,.3,.7])}>
       {part("motherboard",mount.motherboard,[2.25,2.65,.13],"#115e59")}
       {part("motherboard",[-.45,.25,-.70],[.76,.78,.045],"#334155",.7)}
       {Array.from({length:4},(_,i)=>part("motherboard",[.20+i*.17,.78,-.66],[.075,1.1,.08],"#0f172a"))}
@@ -40,31 +41,32 @@ function Scene({selected,onPick,exploded,panel,gpu}:{selected:Id;onPick:(id:Id)=
       {part("motherboard",[-1.35,.45,-.63],[.19,1.7,.18],"#94a3b8",.75)}
       {part("motherboard",[-.55,1.43,-.63],[1.55,.18,.18],"#94a3b8",.75)}
     </group>
-    <group position={exploded?[-.7,.2,1.6]:[0,0,0]}>
+    <group position={assemblyOffset(exploded,[-.7,.2,1.6])}>
       {part("cooler",[mount.cpuSocket[0],mount.cpuSocket[1],-.33],[.92,.96,.58],"#475569",.8)}
       {Array.from({length:7},(_,i)=>part("cooler",[-.65,.38,-.05+i*.025],[.85,.85,.014],"#94a3b8",.9))}
       <Fan position={[-.65,.38,.15]} id="cooler" selected={selected} onPick={onPick} scale={.95}/>
     </group>
-    <group position={exploded?[.55,.45,1.4]:[0,0,0]}>
+    <group position={assemblyOffset(exploded,[.55,.45,1.4])}>
       {[0,.20].map(i=><group key={i}>
         {part("ram",[.35+i,.76,-.48],[.13,1.22,.12],"#0f766e")}
         {Array.from({length:4},(_,j)=>part("ram",[.35+i,.39+j*.23,-.39],[.09,.12,.025],"#0f172a"))}
       </group>)}
     </group>
-    {gpu&&<group position={exploded?[.4,-.3,1.5]:[0,0,0]}>
+    {gpu&&<group position={assemblyOffset(exploded,[.4,-.3,1.5])}>
       {part("gpu",mount.gpu,[2.35,.18,.72],"#1e293b",.7)}
       {part("gpu",[-.25,-.46,-.29],[2.24,.07,.67],"#334155",.7)}
       {[-.85,.32].map(x=><Fan key={x} position={[x,-.39,-.29]} rotation={[Math.PI/2,0,0]} id="gpu" selected={selected} onPick={onPick} scale={.68}/>)}
       {part("gpu",[-1.46,-.57,-.29],[.08,.42,.82],"#94a3b8",.9)}
       {part("gpu",[-.25,-.43,-.69],[1.9,.08,.12],"#d4af37",.35)}
     </group>}
-    <group position={exploded?[.6,-.7,1.4]:[0,0,0]}>
+    <group position={assemblyOffset(exploded,[.6,-.7,1.4])}>
       {part("psu",mount.psu,[1.38,.75,1.10],"#334155",.8)}
       <Fan position={[-.95,-1.91,-.23]} rotation={[Math.PI/2,0,0]} id="psu" selected={selected} onPick={onPick} scale={.65}/>
     </group>
     <group position={mount.frontFans}>{[1.15,.32,-.51].map(y=><Fan key={y} position={[0,y,0]} rotation={[0,Math.PI/2,0]} id="case" selected={selected} onPick={onPick} scale={.8}/>)}</group>
-    {part("case",[1.52,0,.05],[.08,3.45,1.15],"#334155",.8)}
-    {[-.02,.83,-.85].map((y,i)=>part("case",[1.49,y,.05],[.12,.72,.72],"#1e293b",.7))}
+    {part("case",[1.52,0,-.66],[.08,3.55,.08],"#475569",.8)}
+    {part("case",[1.52,0,.74],[.08,3.55,.08],"#475569",.8)}
+    {[-1.65,1.65].map(y=>part("case",[1.52,y,.04],[.08,.08,1.48],"#475569",.8))}
     <gridHelper args={[12,12,"#334155","#1e293b"]} position={[0,-2.2,0]}/>
   </group>;
 }
