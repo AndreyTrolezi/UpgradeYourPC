@@ -6,6 +6,7 @@ import { analyzeBuild } from "@/app/lib/compatibility";
 import { answerUpgradeQuestion } from "@/app/lib/upgrade-assistant";
 import { gpuInstallationManual } from "@/app/lib/assembly-manual";
 import type { BuildConfig, Part } from "@/app/lib/types";
+import { simulateLabGpu } from "@/app/lib/visual-lab";
 const VisualEnginePro = lazy(() => import("@/app/roadmap-lab/visual-engine-pro").then(m => ({ default: m.VisualEnginePro })));
 
 export function RoadmapLab({ sourceBuild = defaultCurrentBuild, availableParts = catalog, embedded = false }: {
@@ -16,10 +17,10 @@ export function RoadmapLab({ sourceBuild = defaultCurrentBuild, availableParts =
   const [question, setQuestion] = useState("Minha configuração é compatível?");
   const [selectedGpu, setSelectedGpu] = useState(sourceBuild.parts.gpu?.[0] ?? "");
   // A sandbox simulation: selecting a GPU must never edit the user's saved PC.
-  const build = useMemo<BuildConfig>(() => ({
-    ...sourceBuild,
-    parts: { ...sourceBuild.parts, gpu: selectedGpu ? [selectedGpu] : [] },
-  }), [sourceBuild, selectedGpu]);
+  const build = useMemo<BuildConfig>(
+    () => simulateLabGpu(sourceBuild, selectedGpu || null),
+    [sourceBuild, selectedGpu],
+  );
   const answer = useMemo(() => answerUpgradeQuestion(question, build, availableParts), [question, build, availableParts]);
   const compatibility = useMemo(() => analyzeBuild(build, availableParts), [build, availableParts]);
   const gpu = availableParts.find(p => p.id === selectedGpu && p.category === "gpu");
