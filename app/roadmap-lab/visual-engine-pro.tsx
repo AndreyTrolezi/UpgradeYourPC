@@ -1,10 +1,13 @@
 "use client";
 
-import { Canvas, ThreeEvent } from "@react-three/fiber";
+import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
 import { Edges, Line, OrbitControls } from "@react-three/drei";
-import { Suspense, useRef, useState, type ComponentRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { ANCHORS, EXPLODED, SHOWCASE, placed, type Point3 } from "@/app/roadmap-lab/scene-layout";
 import type { Part } from "@/app/lib/types";
+import type { Group } from "three";
+import { assemblyGuideSteps, visibleAssemblyPart, type AssemblyGuideStep, type AssemblyPart, type AssemblyStepId } from "@/app/lib/assembly-guide";
+import { AssemblyGuideControls } from "@/app/roadmap-lab/assembly-guide-controls";
 import { canDisplayPanel, modeDescription, presentPart, type VisualMode } from "@/app/roadmap-lab/visual-mode-rules";
 
 type PartId = "case" | "motherboard" | "gpu" | "cooler" | "ram" | "psu";
@@ -202,8 +205,38 @@ function CaseOutline({ visual, faint }: { visual: VisualProps; faint: boolean })
   </mesh>;
 }
 
-function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength }: {
-  selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part; strength:number;
+// Animate only the part introduced in the current tutorial stage.
+// The translation is schematic and does not simulate connectors or real assembly forces.
+const GUIDE_ENTRY: Record<AssemblyPart, Point3> = {
+  case: [0,0,0],
+  motherboard: [0,.2,1.35],
+  ram: [0,1.20,.35],
+  cooler: [0,.05,1.25],
+  psu: [0,-.12,1.35],
+  gpu: [0,.05,1.35],
+};
+function GuideArrival({ part, active, stepId, children }: {
+  part: AssemblyPart; active: boolean; stepId?: AssemblyStepId; children: ReactNode;
+}) {
+  const group=useRef<Group>(null);
+  useEffect(()=>{
+    const g=group.current;
+    if (!g) return;
+    const p=active ? GUIDE_ENTRY[part] : [0,0,0];
+    g.position.set(p[0],p[1],p[2]);
+  },[active,part,stepId]);
+  useFrame((_,dt)=>{
+    const g=group.current;
+    if(!g || !active)return;
+    const factor=Math.exp(-5*Math.min(dt,.1));
+    g.position.multiplyScalar(factor);
+    if(g.position.lengthSq()<.00002)g.position.set(0,0,0);
+  });
+  return <group ref={group}>{children}</group>;
+}
+
+function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength, guideStep }: {
+  selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part; strength:number; guideStep?:AssemblyGuideStep|null;
 }) {
   const exploded=mode==="exploded";
   const visual:VisualProps={selected,isolate,xray:mode==="xray",onPick};
@@ -214,12 +247,27 @@ function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength }
     <pointLight position={[-1.3,1.5,2.0]} intensity={16} distance={8} color="#38bdf8"/>
     {mode==="exploded" || mode==="xray"
       ? <CaseOutline visual={visual} faint={mode==="exploded"}/>
-      : <CaseGeometry visual={visual} panel={panel} shroud={shroud}/>}
-    <Motherboard visual={visual} exploded={exploded} strength={strength}/>
-    <Cooler visual={visual} exploded={exploded} strength={strength}/>
-    <Memory visual={visual} exploded={exploded} strength={strength}/>
-    <GPU gpu={gpu} visual={visual} exploded={exploded} strength={strength}/>
-    <PSU visual={visual} exploded={exploded} strength={strength}/>
+      : <CaseGeometry visual={visual} panel={guideStep ? false : panel} shroud={guideStep ? false : shroud}/>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"motherboard",Boolean(gpu))) && 
+      <GuideArrival part="motherboard" active={guideStep?.arriving==="motherboard"} stepId={guideStep?.id}>
+        <Motherboard visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"cooler",Boolean(gpu))) &&
+      <GuideArrival part="cooler" active={guideStep?.arriving==="cooler"} stepId={guideStep?.id}>
+        <Cooler visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"ram",Boolean(gpu))) &&
+      <GuideArrival part="ram" active={guideStep?.arriving==="ram"} stepId={guideStep?.id}>
+        <Memory visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"gpu",Boolean(gpu))) &&
+      <GuideArrival part="gpu" active={guideStep?.arriving==="gpu"} stepId={guideStep?.id}>
+        <GPU gpu={gpu} visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"psu",Boolean(gpu))) &&
+      <GuideArrival part="psu" active={guideStep?.arriving==="psu"} stepId={guideStep?.id}>
+        <PSU visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
     {!exploded && ANCHORS.frontFans.map((p,i)=><Fan key={i} id="case" position={p} rotation={[0,-Math.PI/2,0]} scale={.90} visual={visual}/>)}
     {!exploded && <Fan id="case" position={ANCHORS.rearFan} rotation={[0,Math.PI/2,0]} scale={.78} visual={visual}/>}
     {mode==="exploded" && !isolate && <ExplodedGuides strength={strength} gpuAvailable={Boolean(gpu)}/>}
