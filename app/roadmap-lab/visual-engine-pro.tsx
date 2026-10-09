@@ -1,10 +1,13 @@
 "use client";
 
-import { Canvas, ThreeEvent } from "@react-three/fiber";
+import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
 import { Edges, Line, OrbitControls } from "@react-three/drei";
-import { Suspense, useRef, useState, type ComponentRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ComponentRef, type ReactNode } from "react";
 import { ANCHORS, EXPLODED, SHOWCASE, placed, type Point3 } from "@/app/roadmap-lab/scene-layout";
 import type { Part } from "@/app/lib/types";
+import type { Group } from "three";
+import { assemblyGuideSteps, visibleAssemblyPart, type AssemblyGuideStep, type AssemblyPart, type AssemblyStepId } from "@/app/lib/assembly-guide";
+import { AssemblyGuideControls } from "@/app/roadmap-lab/assembly-guide-controls";
 import { canDisplayPanel, modeDescription, presentPart, type VisualMode } from "@/app/roadmap-lab/visual-mode-rules";
 
 type PartId = "case" | "motherboard" | "gpu" | "cooler" | "ram" | "psu";
@@ -202,8 +205,38 @@ function CaseOutline({ visual, faint }: { visual: VisualProps; faint: boolean })
   </mesh>;
 }
 
-function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength }: {
-  selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part; strength:number;
+// Animate only the part introduced in the current tutorial stage.
+// The translation is schematic and does not simulate connectors or real assembly forces.
+const GUIDE_ENTRY: Record<AssemblyPart, Point3> = {
+  case: [0,0,0],
+  motherboard: [0,.2,1.35],
+  ram: [0,1.20,.35],
+  cooler: [0,.05,1.25],
+  psu: [0,-.12,1.35],
+  gpu: [0,.05,1.35],
+};
+function GuideArrival({ part, active, stepId, replayKey, children }: {
+  part: AssemblyPart; active: boolean; stepId?: AssemblyStepId; replayKey: number; children: ReactNode;
+}) {
+  const group=useRef<Group>(null);
+  useEffect(()=>{
+    const g=group.current;
+    if (!g) return;
+    const p=active ? GUIDE_ENTRY[part] : [0,0,0];
+    g.position.set(p[0],p[1],p[2]);
+  },[active,part,stepId,replayKey]);
+  useFrame((_,dt)=>{
+    const g=group.current;
+    if(!g || !active)return;
+    const factor=Math.exp(-5*Math.min(dt,.1));
+    g.position.multiplyScalar(factor);
+    if(g.position.lengthSq()<.00002)g.position.set(0,0,0);
+  });
+  return <group ref={group}>{children}</group>;
+}
+
+function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength, guideStep, replayKey }: {
+  selected:PartId; onPick:(id:PartId)=>void; mode:Mode; isolate:boolean; panel:boolean; shroud:boolean; gpu?:Part; strength:number; guideStep?:AssemblyGuideStep|null; replayKey:number;
 }) {
   const exploded=mode==="exploded";
   const visual:VisualProps={selected,isolate,xray:mode==="xray",onPick};
@@ -214,12 +247,27 @@ function Scene({ selected, onPick, mode, isolate, panel, shroud, gpu, strength }
     <pointLight position={[-1.3,1.5,2.0]} intensity={16} distance={8} color="#38bdf8"/>
     {mode==="exploded" || mode==="xray"
       ? <CaseOutline visual={visual} faint={mode==="exploded"}/>
-      : <CaseGeometry visual={visual} panel={panel} shroud={shroud}/>}
-    <Motherboard visual={visual} exploded={exploded} strength={strength}/>
-    <Cooler visual={visual} exploded={exploded} strength={strength}/>
-    <Memory visual={visual} exploded={exploded} strength={strength}/>
-    <GPU gpu={gpu} visual={visual} exploded={exploded} strength={strength}/>
-    <PSU visual={visual} exploded={exploded} strength={strength}/>
+      : <CaseGeometry visual={visual} panel={guideStep ? false : panel} shroud={guideStep ? false : shroud}/>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"motherboard",Boolean(gpu))) && 
+      <GuideArrival part="motherboard" active={guideStep?.arriving==="motherboard"} stepId={guideStep?.id} replayKey={replayKey}>
+        <Motherboard visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"cooler",Boolean(gpu))) &&
+      <GuideArrival part="cooler" active={guideStep?.arriving==="cooler"} stepId={guideStep?.id} replayKey={replayKey}>
+        <Cooler visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"ram",Boolean(gpu))) &&
+      <GuideArrival part="ram" active={guideStep?.arriving==="ram"} stepId={guideStep?.id} replayKey={replayKey}>
+        <Memory visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"gpu",Boolean(gpu))) &&
+      <GuideArrival part="gpu" active={guideStep?.arriving==="gpu"} stepId={guideStep?.id} replayKey={replayKey}>
+        <GPU gpu={gpu} visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
+    {(!guideStep || visibleAssemblyPart(guideStep,"psu",Boolean(gpu))) &&
+      <GuideArrival part="psu" active={guideStep?.arriving==="psu"} stepId={guideStep?.id} replayKey={replayKey}>
+        <PSU visual={visual} exploded={exploded} strength={strength}/>
+      </GuideArrival>}
     {!exploded && ANCHORS.frontFans.map((p,i)=><Fan key={i} id="case" position={p} rotation={[0,-Math.PI/2,0]} scale={.90} visual={visual}/>)}
     {!exploded && <Fan id="case" position={ANCHORS.rearFan} rotation={[0,Math.PI/2,0]} scale={.78} visual={visual}/>}
     {mode==="exploded" && !isolate && <ExplodedGuides strength={strength} gpuAvailable={Boolean(gpu)}/>}
@@ -235,6 +283,21 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
   const [isolate,setIsolate]=useState(false);
   const [panel,setPanel]=useState(false);
   const [shroud,setShroud]=useState(true);
+  const [guideActive,setGuideActive]=useState(false);
+  const [guideIndex,setGuideIndex]=useState(0);
+  const [guideReplayKey,setGuideReplayKey]=useState(0);
+  const [guideChecked,setGuideChecked]=useState<Set<AssemblyStepId>>(()=>new Set());
+  const hasGpu=Boolean(gpu);
+  const guideSteps=useMemo(()=>assemblyGuideSteps(hasGpu),[hasGpu]);
+  const currentGuideIndex=Math.min(guideIndex,guideSteps.length-1);
+  const activeGuideStep=guideActive ? guideSteps[currentGuideIndex] : null;
+  // If the GPU is removed from the catalog selector while guiding, reconcile
+  // the focused part with the reduced, GPU-free step sequence.
+  useEffect(()=>{
+    if(guideActive && activeGuideStep && selected!==activeGuideStep.focus) {
+      setSelected(activeGuideStep.focus);
+    }
+  },[guideActive,activeGuideStep?.id,hasGpu,selected]);
   const orbitRef = useRef<ComponentRef<typeof OrbitControls>>(null);
   const cameraView = (position: Point3, target: Point3 = [0,0,0]) => {
     const orbit = orbitRef.current;
@@ -246,10 +309,41 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
   const explodeCamera = (strength: number) =>
     cameraView([10,6.2,17.4+(strength-1)*10],[0,-1.15,1.05]);
   const switchMode = (next: Mode) => {
+    setGuideActive(false);
     setMode(next);
     if (next==="exploded") explodeCamera(explosionStrength);
     else cameraView([5.8,3.3,7.2]);
   };
+  const goToGuideStep = (index: number) => {
+    const step=guideSteps[index];
+    if(!step)return;
+    setGuideIndex(index);
+    setMode("assembled");
+    setSelected(step.focus);
+    setIsolate(false);
+    setPanel(false);
+    setShroud(false);
+    if(step.focus==="psu") cameraView([4.6,-1.4,7.3]);
+    else if(step.focus==="gpu") cameraView([4.8,1,7.6]);
+    else cameraView([5.8,3.3,7.2]);
+  };
+  const startGuide = () => {
+    setGuideActive(true);
+    setGuideChecked(new Set());
+    setGuideReplayKey(0);
+    goToGuideStep(0);
+  };
+  const stopGuide = () => {
+    setGuideActive(false);
+    setMode("assembled");
+    cameraView([5.8,3.3,7.2]);
+  };
+  const toggleGuideCheck = (id: AssemblyStepId) =>
+    setGuideChecked(previous=>{
+      const next=new Set(previous);
+      if(next.has(id))next.delete(id); else next.add(id);
+      return next;
+    });
   const presetCamera = (position: Point3) => {
     if (mode!=="exploded") return cameraView(position);
     const factor=2.25+(explosionStrength-1)*.75;
@@ -274,8 +368,12 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
           className={"rounded-lg border px-3 py-2 text-sm "+(mode===id?"border-cyan-400 bg-cyan-300/10 text-cyan-200":"border-slate-700 text-slate-300 hover:border-slate-500")}>
           {({assembled:"Montado",exploded:"Vista explodida",xray:"Raio-X",airflow:"Fluxo de ar"} as Record<Mode,string>)[id]}
         </button>)}
+      {!guideActive && <button type="button" onClick={startGuide}
+        className="rounded-lg border border-emerald-500 bg-emerald-950/30 px-3 py-2 text-sm font-semibold text-emerald-200 hover:bg-emerald-950/60">
+        Iniciar montagem guiada
+      </button>}
     </div>
-    <p className="text-sm text-sky-200" role="status">{modeDescription(mode,isolate)}</p>
+    {!guideActive && <p className="text-sm text-sky-200" role="status">{modeDescription(mode,isolate)}</p>}
     {mode==="exploded" && <div className="flex flex-wrap items-center gap-3 text-sm">
       <label htmlFor="explosion-strength" className="font-medium text-slate-200">Separação das peças</label>
       <input id="explosion-strength" type="range" min="1" max="1.6" step="0.1" value={explosionStrength}
@@ -294,13 +392,22 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
       <span className="rounded-md border border-slate-700 px-2 py-1">Translúcido: outras peças</span>
       <span className="rounded-md border border-slate-700 px-2 py-1">Linhas: gabinete</span>
     </div>}
-    <div className="overflow-hidden rounded-xl border border-slate-800 bg-[#0d1629] h-[470px] md:h-[590px]">
+    <div className={guideActive ? "grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]" : ""}>
+      {guideActive && <div className="min-w-0 lg:order-2">
+        <AssemblyGuideControls steps={guideSteps} index={currentGuideIndex} checked={guideChecked}
+          onIndex={goToGuideStep} onToggle={toggleGuideCheck}
+          onReplay={()=>setGuideReplayKey(v=>v+1)} onClose={stopGuide}/>
+      </div>}
+      <div className={"min-w-0 overflow-hidden rounded-xl border border-slate-800 bg-[#0d1629] h-[470px] md:h-[590px] "+(guideActive?"lg:order-1":"")}>
       <Canvas shadows camera={{position:[5.8,3.3,7.2],fov:40}} dpr={[1,1.6]} gl={{antialias:true}}>
         <Suspense fallback={null}>
-          <Scene selected={selected} onPick={setSelected} mode={mode} isolate={isolate} panel={panel} shroud={shroud} gpu={gpu} strength={explosionStrength}/>
+          <Scene selected={selected} onPick={guideActive ? ()=>{} : setSelected} mode={mode}
+            isolate={guideActive ? false : isolate} panel={panel} shroud={shroud} gpu={gpu}
+            strength={explosionStrength} guideStep={activeGuideStep} replayKey={guideReplayKey}/>
           <OrbitControls ref={orbitRef} makeDefault target={[0,0,0]} enableDamping minDistance={4.0} maxDistance={40} maxPolarAngle={Math.PI*.90}/>
         </Suspense>
       </Canvas>
+      </div>
     </div>
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <span className="text-slate-400 mr-1">Câmera:</span>
@@ -311,10 +418,11 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
     </div>
     <div className="flex flex-wrap gap-2">
       {(["case","motherboard","gpu","cooler","ram","psu"] as PartId[]).map(id=>
-        <button key={id} type="button" onClick={()=>setSelected(id)} aria-pressed={selected===id}
-          className={"rounded-lg border px-3 py-2 text-sm "+(selected===id?"border-cyan-400 bg-cyan-300/10 text-cyan-200":"border-slate-700 hover:border-slate-500")}>{PARTS[id].name}</button>)}
+        <button key={id} type="button" disabled={guideActive} onClick={()=>setSelected(id)} aria-pressed={selected===id}
+          title={guideActive ? "Durante o tutorial, selecione o passo desejado acima." : undefined}
+          className={"rounded-lg border px-3 py-2 text-sm "+(selected===id?"border-cyan-400 bg-cyan-300/10 text-cyan-200":"border-slate-700 hover:border-slate-500")+(guideActive?" opacity-50 cursor-not-allowed":"")}>{PARTS[id].name}</button>)}
     </div>
-    <div className="flex flex-wrap gap-3 text-sm">
+    {!guideActive && <div className="flex flex-wrap gap-3 text-sm">
       <label className="inline-flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={isolate} onChange={e=>setIsolate(e.target.checked)}/> Isolar peça selecionada</label>
       <label className={"inline-flex items-center gap-2 "+(mode==="xray"||mode==="exploded"?"opacity-45 cursor-not-allowed":"cursor-pointer")}
         title="Este controle só altera a visualização Montado ou Fluxo de ar">
@@ -326,7 +434,7 @@ export function VisualEnginePro({ gpu, clearance }: { gpu?: Part; clearance?: { 
         <input type="checkbox" checked={shroud} disabled={mode==="xray"||mode==="exploded"}
           onChange={e=>setShroud(e.target.checked)}/> Cobertura da fonte
       </label>
-    </div>
+    </div>}
     <div className="grid gap-4 md:grid-cols-2">
       <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-cyan-300">Componente selecionado</p>

@@ -21,7 +21,17 @@ export function RoadmapLab() {
       <section className="rounded-2xl border border-slate-700 p-5 space-y-4"><h2 className="text-xl font-semibold">1. Compatibilidade</h2><label className="block text-sm" htmlFor="gpu">Simular placa de vídeo</label><select id="gpu" className="w-full rounded-lg bg-slate-900 border border-slate-600 p-3" value={selectedGpu} onChange={e => setSelectedGpu(e.target.value)}><option value="">Sem GPU</option>{catalog.filter(p => p.category === "gpu").map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><p className="text-sm text-slate-400">Dados do PC de exemplo. Medidas e conectores desconhecidos exigem conferência no fabricante.</p><div className="space-y-2">{compatibility.checks.map(c => <div key={c.id} className="rounded-lg border border-slate-800 p-3"><span className={c.severity === "error" ? "text-red-300" : c.severity === "warning" ? "text-amber-300" : c.severity === "ok" ? "text-emerald-300" : "text-slate-300"}>{c.severity.toUpperCase()}</span><strong className="ml-2">{c.title}</strong><p className="text-sm text-slate-400">{c.detail}</p></div>)}</div></section>
       <section className="rounded-2xl border border-slate-700 p-5 space-y-4"><h2 className="text-xl font-semibold">2. Assistente de upgrades — versão local</h2><label htmlFor="question" className="block text-sm">Pergunta</label><input id="question" value={question} onChange={e => setQuestion(e.target.value)} className="w-full rounded-lg bg-slate-900 border border-slate-600 p-3"/><p>{answer.text}</p>{answer.checks.length > 0 && <ul className="list-disc pl-5 text-amber-200 text-sm">{answer.checks.map((c,i) => <li key={i}>{c}</li>)}</ul>}</section>
       <Suspense fallback={<div className="rounded-xl border border-slate-700 p-8 text-slate-300">Carregando Visual Engine 3D...</div>}><VisualEnginePro gpu={gpu} clearance={{ length: typeof gpu?.specs.length === "number" ? gpu.specs.length : 0, limit: (() => { const c = catalog.find(p => p.id === build.parts.case?.[0]); return typeof c?.specs.gpuLength === "number" ? c.specs.gpuLength : 0; })() }} /></Suspense>
-      <section className="rounded-2xl border border-slate-700 p-5 space-y-4"><h2 className="text-xl font-semibold">3. Guia de montagem: instalar GPU</h2><p className="text-sm text-slate-400">Sequência técnica genérica. Confirme o manual específico da GPU, gabinete e fonte antes de executar.</p><div className="grid gap-3">{steps.map((s,i) => <article key={s.title} className="rounded-lg bg-slate-900 p-4"><h3 className="font-semibold text-cyan-300">Etapa {i+1}: {s.title}</h3><p className="mt-2">{s.instruction}</p><p className="text-amber-200 text-sm mt-2">{s.caution}</p></article>)}</div></section>
+      <details className="rounded-2xl border border-slate-700 p-5 group">
+        <summary className="cursor-pointer font-semibold text-lg text-slate-200">
+          Manual complementar: instalação de GPU (somente texto)
+        </summary>
+        <p className="mt-3 text-sm text-slate-400">O tutorial interativo fica dentro do Visual Engine 3D, no botão “Iniciar montagem guiada”. Este manual complementar preserva instruções específicas para a GPU. Confira a documentação do fabricante antes da instalação.</p>
+        <div className="mt-4 grid gap-3">{steps.map((s,i) => <article key={s.title} className="rounded-lg bg-slate-900 p-4">
+          <h3 className="font-semibold text-cyan-300">Etapa {i+1}: {s.title}</h3>
+          <p className="mt-2">{s.instruction}</p>
+          <p className="text-amber-200 text-sm mt-2">{s.caution}</p>
+        </article>)}</div>
+      </details>
     </div>
   </main>;
 }
