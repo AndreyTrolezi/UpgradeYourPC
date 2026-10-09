@@ -48,6 +48,7 @@ assert.equal(glass.depthWrite,false,"Glass should not hide parts behind it");
 assert.equal(canDisplayPanel("assembled",false,"gpu",true),true);
 assert.equal(canDisplayPanel("assembled",false,"gpu",false),false);
 assert.equal(canDisplayPanel("xray",false,"gpu",true),false);
+assert.equal(canDisplayPanel("exploded",false,"gpu",true),false);
 assert.equal(canDisplayPanel("assembled",true,"gpu",true),false);
 assert.equal(canDisplayPanel("assembled",true,"case",true),true);
 for(const mode of modes) assert.ok(modeDescription(mode,false).length>20);
